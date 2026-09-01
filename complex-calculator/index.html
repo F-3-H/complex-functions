@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>复变函数计算器 · e^(iθ) 矢量动画</title>
+<style>
+  :root { --ink:#1c2733; --muted:#5b6b7b; --line:#dfe5ea; --accent:#2563eb; --card:#ffffff; --bg:#eef2f6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:18px 20px 8px; max-width:1500px; margin:0 auto; }
+  h1 { margin:0 0 6px; font-size:22px; }
+  .sub { color:var(--muted); font-size:13px; margin:0; line-height:1.6; }
+  .main { display:flex; flex-wrap:wrap; gap:14px; padding:10px 20px 30px; align-items:flex-start; max-width:1500px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(16,24,40,.06); }
+  #input-card { width:100%; }
+  h2 { margin:0 0 10px; font-size:15px; }
+  .exprrow { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  #expr { flex:1 1 340px; font-family:Consolas,"Courier New",monospace; font-size:15px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; outline:none; min-width:260px; }
+  #expr:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(37,99,235,.12); }
+  button { font:inherit; }
+  .btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 16px; cursor:pointer; }
+  .btn:hover { filter:brightness(1.08); }
+  .btn.ghost { background:#fff; color:var(--ink); border:1px solid var(--line); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .chip { font-family:Consolas,monospace; font-size:13px; background:#f2f5f9; border:1px solid var(--line); border-radius:999px; padding:4px 12px; cursor:pointer; color:var(--ink); }
+  .chip:hover { background:#e4ecfb; border-color:#b9cdf5; }
+  #err { font-size:13px; margin-top:8px; min-height:18px; }
+  #left-card { flex:0 0 432px; }
+  #right-card { flex:1 1 520px; min-width:520px; }
+  canvas { width:100%; display:block; border:1px solid var(--line); border-radius:10px; background:#fff; touch-action:none; }
+  #cvL { height:170px; cursor:crosshair; }
+  #cvR { height:560px; cursor:grab; }
+  #cvR.dragging { cursor:grabbing; }
+  .ctrls { display:flex; flex-wrap:wrap; gap:10px 14px; margin-top:10px; align-items:center; font-size:13px; }
+  .ctrls label { display:flex; align-items:center; gap:5px; color:var(--muted); }
+  .ctrls input[type=number] { width:76px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; }
+  input[type=range] { accent-color:var(--accent); }
+  select { padding:4px 6px; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  .readout { margin-top:10px; font-size:13px; color:var(--muted); font-family:Consolas,monospace; }
+  .readout b { color:var(--ink); }
+  .hint { margin:8px 0 0; font-size:12px; color:var(--muted); line-height:1.5; }
+  .legend { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:10px; font-size:12px; font-family:Consolas,monospace; }
+  .legend .sw { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:4px; vertical-align:-1px; }
+  .toggles { display:flex; gap:12px; margin-top:10px; flex-wrap:wrap; font-size:13px; align-items:center; }
+  .toggles label { display:flex; align-items:center; gap:5px; color:var(--muted); }
+  @media (max-width:1040px){ #left-card { flex:1 1 100%; } #right-card { flex:1 1 100%; min-width:0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>复变函数计算器 · e^(iθ) 相位矢量动画</h1>
+  <p class="sub">f(θ) = Σ c<sub>k</sub>·e<sup>p<sub>k</sub>θ</sup>·e<sup>i(a<sub>k</sub>θ+b<sub>k</sub>)</sup> —— 在左侧 θ 轴上点两个点构成线段，θ 自动缓慢地从起点移动到终点；右侧复平面中每个 e<sup>(...)</sup> 项对应一个首尾相接的旋转矢量，最终端点的轨迹就是函数图像。p<sub>k</sub> 为衰变/增长系数（如 e<sup>−θ</sup>），使曲线收缩或展开为螺旋。</p>
+</header>
+<div class="main">
+
+  <section class="card" id="input-card">
+    <h2>① 自定义复变函数</h2>
+    <div class="exprrow">
+      <input id="expr" value="e^(iθ)" spellcheck="false" autocomplete="off">
+      <button class="btn" id="applyBtn">应用</button>
+    </div>
+    <div class="chips" id="presets"></div>
+    <div id="err"></div>
+    <p class="sub" style="margin-top:8px">语法：f(θ)=Σ c·e^(pθ)·e^(i(aθ+b))。支持数字、π(pi)、i、θ(theta，仅限 e^ 指数内)、e^(...) 或 exp(...)、+ − * / 与隐式乘法；指数可为复数线性式：<code>iθ</code>、<code>e^(i2θ)</code>、<code>i(2θ+π/2)</code>、<code>e^(-θ)</code>、<code>e^(-0.3θ)e^(iθ)</code>、<code>e^((-1+i)θ)</code>。示例：<code>e^(iθ)+e^(i2θ)+0.5e^(i3θ)</code>。</p>
+  </section>
+
+  <section class="card" id="left-card">
+    <h2>② 自变量面板（一维 θ 轴）</h2>
+    <canvas id="cvL"></canvas>
+    <div class="ctrls">
+      <label>θ范围 <input type="number" id="thMin" step="0.5"> ~ <input type="number" id="thMax" step="0.5"></label>
+      <label>起点 <input type="number" id="segS" step="0.5"></label>
+      <label>终点 <input type="number" id="segE" step="0.5"></label>
+    </div>
+    <div class="ctrls">
+      <label>时长 <input type="range" id="speed" min="1" max="30" value="8"> <span id="speedVal">8s</span></label>
+      <label>循环模式
+        <select id="loopMode">
+          <option value="pingpong">往返</option>
+          <option value="once">单程</option>
+          <option value="loop">循环</option>
+        </select>
+      </label>
+      <button class="btn" id="playBtn">▶ 播放</button>
+      <button class="btn ghost" id="resetBtn">↺ 回到起点</button>
+    </div>
+    <div class="ctrls">
+      <button class="btn ghost" id="zoomInBtn" title="放大 θ 轴">＋ 放大</button>
+      <button class="btn ghost" id="zoomOutBtn" title="缩小 θ 轴">－ 缩小</button>
+      <button class="btn ghost" id="resetRangeBtn">重置范围 0~2π</button>
+      <label>吸附刻度 <input type="checkbox" id="snapChk" checked></label>
+    </div>
+    <p class="hint">θ 轴操作：滚轮缩放；按住空白处拖动平移；拖拽「起点/终点」标记或蓝色 θ 圆点微调；点击空白处设置新的起终点（第二次点击后自动播放）。</p>
+    <div class="ctrls">
+      <label style="flex:1 1 170px; min-width:170px;">手动拖动 θ
+        <input type="range" id="thetaScrub" step="0.001" style="flex:1;">
+      </label>
+    </div>
+    <div class="readout" id="thetaOut"></div>
+  </section>
+
+  <section class="card" id="right-card">
+    <h2>③ 因变量面板（复平面 f(θ)）</h2>
+    <canvas id="cvR"></canvas>
+    <div class="toggles">
+      <label><input type="checkbox" id="tgCircles" checked> 虚线圈</label>
+      <label><input type="checkbox" id="tgVectors" checked> 矢量</label>
+      <label><input type="checkbox" id="tgCurve" checked> 函数曲线</label>
+      <label><input type="checkbox" id="tgDot" checked> 端点</label>
+      <button class="btn ghost" id="fitBtn">适应视图</button>
+    </div>
+    <div class="legend" id="legend"></div>
+    <div class="readout" id="fOut"></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+'use strict';
+const PI = Math.PI, TAU = 2*PI;
+const PALETTE = ['#e6194b','#3cb44b','#4363d8','#f58231','#911eb4','#00a3a3','#f032e6','#bcd60c','#9a6324','#800000','#469990','#e6beff','#000075','#fabebe','#aaffc3','#ffd8b1','#808000','#42d4f4','#fffac8','#006400'];
+
+/* ---------------- 状态 ---------------- */
+const state = {
+  terms: [],
+  exprText: 'e^(iθ)',
+  thMin: 0, thMax: TAU,
+  seg: { s: 0, e: TAU, complete: true },
+  theta: 0, pos: 0, dir: 1,
+  playing: false, duration: 8, loopMode: 'pingpong',
+  curve: [],
+  view: { cx: 0, cy: 0, s: 90 },
+  showCircles: true, showVectors: true, showCurve: true, showDot: true
+};
+const $ = id => document.getElementById(id);
+
+/* ---------------- 工具函数 ---------------- */
+function fmt(x){
+  if (Object.is(x, -0)) x = 0;
+  if (!isFinite(x)) return String(x);
+  if (Math.abs(x) < 1e-12) return '0';
+  const r = Math.abs(x);
+  if (Math.abs(r - PI) < 1e-9) return x < 0 ? '-π' : 'π';
+  return Number(x.toPrecision(4)).toString();
+}
+function gcd(a, b){
+  a = Math.abs(Math.round(a)); b = Math.abs(Math.round(b));
+  while (b){ const t = a % b; a = b; b = t; }
+  return a || 1;
+}
+function renderPiFrac(m, k){
+  if (Math.abs(m) < 1e-9) return '0';
+  const g = gcd(m, k);
+  m = m / g; k = k / g;
+  const sgn = m < 0 ? '-' : '';
+  const am = Math.abs(m);
+  if (k === 1) return sgn + (am === 1 ? 'π' : am + 'π');
+  return sgn + (am === 1 ? '' : am) + 'π/' + k;
+}
+function fracLabel(v){
+  const n = v / PI;
+  if (Math.abs(n) < 1e-9) return '0';
+  const sgn = n < 0 ? -1 : 1;
+  const an = Math.abs(n);
+  const cand = [];
+  for (const k of [1,2,3,4,6,8,12,16]) for (let m = 0; m <= 12; m++) cand.push([m, k]);
+  let best = null, bd = 1e9;
+  for (const [a,b] of cand){ const d = Math.abs(an - a/b); if (d < bd){ bd = d; best = [a,b]; } }
+  if (bd > 0.008) return fmt(v);
+  return renderPiFrac(sgn * best[0], best[1]);
+}
+function leftTickStep(w){
+  const span = Math.max(state.thMax - state.thMin, 1e-9);
+  const usable = Math.max(w - 2*36, 40);
+  const target = span * 55 / usable;   // 期望刻度间隔 ≥ 55px
+  let step = PI;
+  while (step < target) step *= 2;
+  let guard = 0;
+  while (step / 2 >= target && guard < 8){ step /= 2; guard++; }
+  return step;
+}
+function tickLabel(v, step){
+  if (Math.abs(v) < 1e-9) return '0';
+  const n = v / step;               // 整数倍
+  const kNum = step / PI;           // step = kNum·π
+  if (kNum >= 1 - 1e-9) return renderPiFrac(Math.round(n * kNum), 1);
+  return renderPiFrac(Math.round(n), Math.round(1 / kNum));
+}
+function termStr(tr){
+  const r = tr.r, c = tr.c, a = tr.a, b = tr.b;
+  if (Math.abs(r) < 1e-9) return '0';
+  const rb = Math.abs(r);
+  let s = '';
+  if (r < 0) s = '-';
+  if (Math.abs(rb - 1) > 1e-9) s += fmt(rb);
+  const parts = [];
+  if (Math.abs(c) > 1e-9) parts.push('e^(' + (c < 0 ? '-' : '') + fmt(Math.abs(c)) + 'θ)');
+  const ab = Math.abs(a), bb = Math.abs(b);
+  if (!(ab < 1e-9 && bb < 1e-9)){
+    let exp = '';
+    if (ab > 1e-9){
+      if (ab !== 1) exp += fmt(a); else if (a < 0) exp += '-';
+      exp += 'θ';
+    }
+    if (bb > 1e-9) exp += (exp && b > 0 ? '+' : '') + fmt(b);
+    const inner = (exp.indexOf('θ') >= 0 && exp.indexOf('θ') !== exp.length - 1) ? '(' + exp + ')' : exp;
+    parts.push('e^(i' + inner + ')');
+  }
+  if (parts.length) s += parts.join('·');
+  else s += fmt(rb);
+  return s;
+}
+function describeTerms(terms){
+  return terms.map(termStr).join(' + ').replace(/\+ -/g, '- ');
+}
+function cmul2(a, b){ return { re: a.re*b.re - a.im*b.im, im: a.re*b.im + a.im*b.re }; }
+
+/* ---------------- 词法分析 ---------------- */
+function tokenize(src){
+  const toks = []; let i = 0; const n = src.length;
+  function err(m){ throw new Error(m + '（第 ' + (i+1) + ' 个字符处）'); }
+  while (i < n){
+    const c = src[i];
+    if (/\s/.test(c)){ i++; continue; }
+    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i+1] || ''))){
+      let j = i;
+      while (j < n && /[0-9]/.test(src[j])) j++;
+      if (src[j] === '.'){ j++; while (j < n && /[0-9]/.test(src[j])) j++; }
+      const v = parseFloat(src.slice(i, j));
+      if (!isFinite(v)) err('无效数字');
+      toks.push({ t: 'NUM', v: v }); i = j; continue;
+    }
+    if (/[a-zA-Z]/.test(c)){
+      let j = i;
+      while (j < n && /[a-zA-Z]/.test(src[j])) j++;
+      const wl = src.slice(i, j).toLowerCase();
+      if (wl === 'e' || wl === 'exp') toks.push({ t: 'E' });
+      else if (wl === 'i') toks.push({ t: 'I' });
+      else if (wl === 'pi') toks.push({ t: 'PI' });
+      else if (wl === 'theta') toks.push({ t: 'TH' });
+      else err("未知符号 '" + src.slice(i, j) + "'");
+      i = j; continue;
+    }
+    if (c === 'θ'){ toks.push({ t: 'TH' }); i++; continue; }
+    if (c === 'π'){ toks.push({ t: 'PI' }); i++; continue; }
+    if (c === '+'){ toks.push({ t: 'PLUS' }); i++; continue; }
+    if (c === '-' || c === '−'){ toks.push({ t: 'MINUS' }); i++; continue; }
+    if (c === '*' || c === '·' || c === '×'){ toks.push({ t: 'STAR' }); i++; continue; }
+    if (c === '/'){ toks.push({ t: 'SLASH' }); i++; continue; }
+    if (c === '^'){ toks.push({ t: 'CARET' }); i++; continue; }
+    if (c === '('){ toks.push({ t: 'LP' }); i++; continue; }
+    if (c === ')'){ toks.push({ t: 'RP' }); i++; continue; }
+    err("未知字符 '" + c + "'");
+  }
+  toks.push({ t: 'EOF' });
+  return toks;
+}
+
+/* ---------------- 语法分析 ---------------- */
+// 顶层：相位矢量列表（每个项 r·e^(cθ)·e^(i(aθ+b))，c 为衰变/增长系数）
+function phAdd(a, b){ return a.concat(b); }
+function phSub(a, b){ return a.concat(b.map(t => ({ r: -t.r, c: t.c, a: t.a, b: t.b }))); }
+function phNeg(a){ return a.map(t => ({ r: -t.r, c: t.c, a: t.a, b: t.b })); }
+function phMul(a, b){ const out = []; for (const x of a) for (const y of b) out.push({ r: x.r*y.r, c: x.c+y.c, a: x.a+y.a, b: x.b+y.b }); return out; }
+function phDiv(a, b){
+  const out = [];
+  for (const x of a) for (const y of b){
+    if (Math.abs(y.r) < 1e-12) throw new Error('除以零（某项系数为 0）');
+    out.push({ r: x.r/y.r, c: x.c-y.c, a: x.a-y.a, b: x.b-y.b });
+  }
+  return out;
+}
+// e^ 指数内的复线性值：(aRe + i·aIm)·θ + (bRe + i·bIm)
+function clConst(re, im){ return { aRe: 0, aIm: 0, bRe: re, bIm: im }; }
+function clNeg(v){ return { aRe: -v.aRe, aIm: -v.aIm, bRe: -v.bRe, bIm: -v.bIm }; }
+function clMul(l, r){
+  if ((Math.abs(l.aRe) > 1e-12 || Math.abs(l.aIm) > 1e-12) && (Math.abs(r.aRe) > 1e-12 || Math.abs(r.aIm) > 1e-12))
+    throw new Error('指数中不能出现 θ 的乘积（如 iθ·iθ），请展开为 i(aθ+b) 的形式');
+  const AD = cmul2({ re: l.aRe, im: l.aIm }, { re: r.bRe, im: r.bIm });
+  const BC = cmul2({ re: l.bRe, im: l.bIm }, { re: r.aRe, im: r.aIm });
+  const BD = cmul2({ re: l.bRe, im: l.bIm }, { re: r.bRe, im: r.bIm });
+  return { aRe: AD.re + BC.re, aIm: AD.im + BC.im, bRe: BD.re, bIm: BD.im };
+}
+function clDiv(l, r){
+  if (Math.abs(r.aRe) > 1e-12 || Math.abs(r.aIm) > 1e-12)
+    throw new Error('指数中不能除以包含 θ 的项');
+  const den = r.bRe*r.bRe + r.bIm*r.bIm;
+  if (den < 1e-12) throw new Error('指数表达式中出现除以零');
+  const inv = { re: r.bRe/den, im: -r.bIm/den };
+  const A = cmul2({ re: l.aRe, im: l.aIm }, inv);
+  const B = cmul2({ re: l.bRe, im: l.bIm }, inv);
+  return { aRe: A.re, aIm: A.im, bRe: B.re, bIm: B.im };
+}
+class Parser {
+  constructor(toks){ this.toks = toks; this.p = 0; }
+  peek(){ return this.toks[this.p]; }
+  next(){ return this.toks[this.p++]; }
+  expect(t, msg){
+    const x = this.next();
+    if (x.t !== t) throw new Error(msg || ('语法错误：期望 ' + t + '，得到 ' + x.t));
+    return x;
+  }
+  err(m){ throw new Error(m); }
+
+  parse(){
+    const list = this.parseExpr();
+    const x = this.next();
+    if (x.t !== 'EOF') this.err('语法错误：多余的符号（第 ' + this.p + ' 个记号处）');
+    return list.filter(t => Math.abs(t.r) > 1e-9);
+  }
+  parseExpr(){
+    let left = this.parseTerm();
+    for (;;){
+      const t = this.peek().t;
+      if (t === 'PLUS' || t === 'MINUS'){
+        const op = this.next().t;
+        const right = this.parseTerm();
+        left = op === 'PLUS' ? phAdd(left, right) : phSub(left, right);
+      } else if (t === 'TH'){
+        this.err('θ 只能出现在 e^(iθ) 的指数中（自变量 θ 不能单独作为函数项）');
+      } else break;
+    }
+    return left;
+  }
+  parseTerm(){
+    let left = this.parseFactor();
+    for (;;){
+      const t = this.peek().t;
+      if (t === 'STAR' || t === 'SLASH'){
+        const op = this.next().t;
+        const right = this.parseFactor();
+        left = op === 'STAR' ? phMul(left, right) : phDiv(left, right);
+      } else if (t === 'NUM' || t === 'PI' || t === 'I' || t === 'E' || t === 'LP'){
+        left = phMul(left, this.parseFactor());
+      } else break;
+    }
+    return left;
+  }
+  parseFactor(){
+    const t = this.next();
+    switch (t.t){
+      case 'NUM': return [{ r: t.v, c: 0, a: 0, b: 0 }];
+      case 'PI':  return [{ r: PI, c: 0, a: 0, b: 0 }];
+      case 'I':   return [{ r: 1, c: 0, a: 0, b: PI/2 }];
+      case 'E': {
+        if (this.peek().t === 'CARET') this.next();
+        this.expect('LP', 'e^ 后面必须是括号，例如 e^(iθ)');
+        const val = this.parseCLExpr();
+        this.expect('RP', 'e^(...) 缺少右括号 )');
+        const r = Math.exp(val.bRe);
+        if (!isFinite(r)) this.err('e 的指数常数部分过大（实部超出范围）');
+        return [{ r: r, c: val.aRe, a: val.aIm, b: val.bIm }];
+      }
+      case 'LP': {
+        const inner = this.parseExpr();
+        this.expect('RP', '括号不匹配：缺少 )');
+        return inner;
+      }
+      case 'MINUS': return phNeg(this.parseFactor());
+      case 'PLUS':  return this.parseFactor();
+      case 'TH': this.err('θ 只能出现在 e^(iθ) 的指数中（自变量 θ 不能单独作为函数项）');
+      default: this.err('语法错误：意外的符号 ' + t.t);
+    }
+  }
+  parseCLExpr(){
+    let left = this.parseCLTerm();
+    for (;;){
+      const t = this.peek().t;
+      if (t === 'PLUS' || t === 'MINUS'){
+        const op = this.next().t;
+        const r = this.parseCLTerm();
+        left = op === 'PLUS'
+          ? { aRe: left.aRe + r.aRe, aIm: left.aIm + r.aIm, bRe: left.bRe + r.bRe, bIm: left.bIm + r.bIm }
+          : { aRe: left.aRe - r.aRe, aIm: left.aIm - r.aIm, bRe: left.bRe - r.bRe, bIm: left.bIm - r.bIm };
+      } else break;
+    }
+    return left;
+  }
+  parseCLTerm(){
+    let left = this.parseCLFactor();
+    for (;;){
+      const t = this.peek().t;
+      if (t === 'STAR' || t === 'SLASH'){
+        const op = this.next().t;
+        const r = this.parseCLFactor();
+        left = op === 'STAR' ? clMul(left, r) : clDiv(left, r);
+      } else if (t === 'NUM' || t === 'PI' || t === 'TH' || t === 'I' || t === 'LP'){
+        left = clMul(left, this.parseCLFactor());
+      } else break;
+    }
+    return left;
+  }
+  parseCLFactor(){
+    const t = this.next();
+    switch (t.t){
+      case 'NUM': return clConst(t.v, 0);
+      case 'PI':  return clConst(PI, 0);
+      case 'TH':  return { aRe: 1, aIm: 0, bRe: 0, bIm: 0 };
+      case 'I':   return clConst(0, 1);
+      case 'LP': {
+        const e = this.parseCLExpr();
+        this.expect('RP', '括号不匹配：缺少 )');
+        return e;
+      }
+      case 'MINUS': return clNeg(this.parseCLFactor());
+      case 'PLUS':  return this.parseCLFactor();
+      default: this.err('e 的指数中出现了不允许的内容 ' + t.t);
+    }
+  }
+}
+
+/* ---------------- 求值 ---------------- */
+const RCLAMP = 1e4;   // 显示半径截断（防止发散函数数值溢出）
+function evalTerms(terms, th){
+  const pts = [{ x: 0, y: 0 }];
+  for (const tr of terms){
+    const p = pts[pts.length - 1];
+    let m = tr.r * Math.exp(tr.c * th);
+    if (!isFinite(m)) m = tr.r >= 0 ? RCLAMP : -RCLAMP;
+    if (m > RCLAMP) m = RCLAMP;
+    if (m < -RCLAMP) m = -RCLAMP;
+    const ang = tr.a * th + tr.b;
+    let x = p.x + m * Math.cos(ang), y = p.y + m * Math.sin(ang);
+    const mag = Math.hypot(x, y);
+    if (mag > RCLAMP){ x *= RCLAMP / mag; y *= RCLAMP / mag; }
+    pts.push({ x: x, y: y });
+  }
+  return pts;
+}
+function computeCurve(){
+  const terms = state.terms;
+  if (!terms.length) return [];
+  const r0 = (state.seg && state.seg.complete) ? [state.seg.s, state.seg.e] : [state.thMin, state.thMax];
+  const d = Math.abs(r0[1] - r0[0]);
+  if (d < 1e-12) return [];
+  let Amax = 1;
+  for (const t of terms) Amax = Math.max(Amax, Math.abs(t.a));
+  const N = Math.min(12000, Math.max(300, Math.ceil(d * Amax * 4)));
+  const pts = [];
+  for (let i = 0; i <= N; i++){
+    const th = r0[0] + (r0[1] - r0[0]) * i / N;
+    const chain = evalTerms(terms, th);
+    pts.push(chain[chain.length - 1]);
+  }
+  return pts;
+}
+
+/* ---------------- 应用函数 / 视图 ---------------- */
+function applyExpr(){
+  const text = $('expr').value.trim();
+  state.exprText = text;
+  try{
+    const terms = new Parser(tokenize(text)).parse();
+    if (!terms.length) throw new Error('函数为空（没有任何非零项）');
+    state.terms = terms;
+    state.error = null;
+    $('err').style.color = '#1a7f37';
+    $('err').textContent = '✓ 已解析：f(θ) = ' + describeTerms(terms);
+    state.curve = computeCurve();
+    fitView();
+    buildLegend();
+    updateControlsFromState();
+  }catch(e){
+    state.error = e.message;
+    $('err').style.color = '#d33';
+    $('err').textContent = '✗ ' + e.message;
+  }
+}
+function fitView(){
+  const pts = state.curve;
+  const cv = $('cvR');
+  const cw = cv.clientWidth || 600, ch = cv.clientHeight || 500;
+  if (!pts.length){ state.view = { cx: cw/2, cy: ch/2, s: 80 }; return; }
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const p of pts){
+    if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x;
+    if (p.y < y0) y0 = p.y; if (p.y > y1) y1 = p.y;
+  }
+  let w = x1 - x0, h = y1 - y0;
+  if (!isFinite(w) || !isFinite(h)) return;
+  if (w < 1e-9) w = Math.max(w, 2);
+  if (h < 1e-9) h = Math.max(h, 2);
+  const pad = Math.min(cw, ch) * 0.12;
+  const s = Math.min((cw - 2*pad) / w, (ch - 2*pad) / h);
+  state.view.s = Math.max(1e-6, Math.min(s, 1e6));
+  state.view.cx = cw/2 - ((x0 + x1)/2) * state.view.s;
+  state.view.cy = ch/2 + ((y0 + y1)/2) * state.view.s;
+}
+function zoomAt(mx, my, f){
+  const v = state.view;
+  const wx = (mx - v.cx) / v.s, wy = (v.cy - my) / v.s;
+  v.s = Math.max(1e-6, Math.min(1e6, v.s * f));
+  v.cx = mx - wx * v.s;
+  v.cy = my + wy * v.s;
+}
+
+/* ---------------- 画布 ---------------- */
+function setupCanvas(cv){
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = cv.clientWidth || 300, h = cv.clientHeight || 150;
+  if (cv.width !== Math.round(w*dpr) || cv.height !== Math.round(h*dpr)){
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return [w, h, ctx];
+}
+function gridStep(w, s){
+  const raw = 46 / Math.max(s, 1e-9);
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 5, 10]){ if (m * pow >= raw) return m * pow; }
+  return 10 * pow;
+}
+function drawLeft(){
+  const cv = $('cvL'), [w, h, ctx] = setupCanvas(cv);
+  ctx.clearRect(0, 0, w, h);
+  const pad = 36;
+  const thMin = state.thMin, thMax = state.thMax;
+  const span = Math.max(thMax - thMin, 1e-9);
+  const X = th => pad + (th - thMin) / span * (w - 2*pad);
+  // 轴
+  ctx.strokeStyle = '#8a97a5'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad - 14, h/2); ctx.lineTo(w - pad + 10, h/2); ctx.stroke();
+  ctx.fillStyle = '#8a97a5';
+  ctx.beginPath(); ctx.moveTo(w - pad + 10, h/2); ctx.lineTo(w - pad + 2, h/2 - 5); ctx.lineTo(w - pad + 2, h/2 + 5); ctx.fill();
+  // 刻度与标签（随缩放自适应）
+  ctx.font = '12px Consolas,monospace'; ctx.fillStyle = '#5b6b7b'; ctx.textAlign = 'center';
+  const step = leftTickStep(w);
+  for (let v = Math.ceil(thMin / step) * step; v <= thMax + 1e-9; v += step){
+    const x = X(v);
+    ctx.strokeStyle = '#b9c2cc'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, h/2 - 5); ctx.lineTo(x, h/2 + 5); ctx.stroke();
+    ctx.fillText(tickLabel(v, step), x, h/2 + 18);
+  }
+  // 线段（起点→终点）
+  if (state.seg){
+    const x1 = X(state.seg.s);
+    ctx.strokeStyle = 'rgba(37,99,235,0.22)'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+    if (state.seg.e != null){
+      const x2 = X(state.seg.e);
+      ctx.beginPath(); ctx.moveTo(x1, h/2); ctx.lineTo(x2, h/2); ctx.stroke();
+    }
+    ctx.fillStyle = '#16a34a';
+    ctx.beginPath(); ctx.moveTo(x1, h/2 - 15); ctx.lineTo(x1 - 6, h/2 - 7); ctx.lineTo(x1 + 6, h/2 - 7); ctx.fill();
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#16a34a'; ctx.fillText('起点', x1, h/2 - 19);
+    if (state.seg.e != null){
+      const x2 = X(state.seg.e);
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath(); ctx.moveTo(x2, h/2 - 15); ctx.lineTo(x2 - 6, h/2 - 7); ctx.lineTo(x2 + 6, h/2 - 7); ctx.fill();
+      ctx.fillStyle = '#dc2626'; ctx.fillText('终点', x2, h/2 - 19);
+    }
+  }
+  // θ 位置
+  const x = X(state.theta);
+  ctx.strokeStyle = 'rgba(37,99,235,0.35)'; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(x, h/2); ctx.lineTo(x, 24); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = '#2563eb';
+  ctx.beginPath(); ctx.arc(x, h/2, 6, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x, h/2, 2.4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#2563eb'; ctx.font = '600 12px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('θ', x, 16);
+  // 右上角：θ 的单位圆示意
+  const cxc = w - 54, cyc = 52, R = 26;
+  ctx.strokeStyle = '#d5dce3'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(cxc, cyc, R, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cxc - R - 6, cyc); ctx.lineTo(cxc + R + 6, cyc); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cxc, cyc - R - 6); ctx.lineTo(cxc, cyc + R + 6); ctx.stroke();
+  ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cxc, cyc); ctx.lineTo(cxc + R * Math.cos(state.theta), cyc - R * Math.sin(state.theta)); ctx.stroke();
+  ctx.fillStyle = '#2563eb';
+  ctx.beginPath(); ctx.arc(cxc + R * Math.cos(state.theta), cyc - R * Math.sin(state.theta), 4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#9aa7b5'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('单位圆', cxc, cyc + R + 12);
+}
+function drawRight(){
+  const cv = $('cvR'), [w, h, ctx] = setupCanvas(cv);
+  ctx.clearRect(0, 0, w, h);
+  const v = state.view;
+  const toSX = x => v.cx + x * v.s;
+  const toSY = y => v.cy - y * v.s;
+  const step = gridStep(w, v.s);
+  const xmin = (0 - v.cx) / v.s, xmax = (w - v.cx) / v.s;
+  const ymin = (h - v.cy) / v.s, ymax = (0 - v.cy) / v.s;
+  ctx.font = '11px Consolas,monospace';
+  ctx.lineWidth = 1;
+  for (let k = Math.ceil(xmin / step); k * step <= xmax + 1e-9; k++){
+    const x = k * step, sx = toSX(x);
+    if (Math.abs(x) > 1e-9){
+      ctx.strokeStyle = '#eef1f5';
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, h); ctx.stroke();
+    }
+    ctx.fillStyle = '#9aa7b5'; ctx.textAlign = 'center';
+    ctx.fillText(fmt(k * step), sx, toSY(0) + 16);
+  }
+  for (let k = Math.ceil(ymin / step); k * step <= ymax + 1e-9; k++){
+    const y = k * step, sy = toSY(y);
+    if (Math.abs(y) > 1e-9){
+      ctx.strokeStyle = '#eef1f5';
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(w, sy); ctx.stroke();
+    }
+    ctx.fillStyle = '#9aa7b5'; ctx.textAlign = 'right';
+    ctx.fillText(fmt(k * step), toSX(0) - 6, sy + 4);
+  }
+  // 坐标轴
+  const x0 = toSX(0), y0 = toSY(0);
+  ctx.strokeStyle = '#7c8a99'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(w, y0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x0, 0); ctx.lineTo(x0, h); ctx.stroke();
+  ctx.fillStyle = '#7c8a99'; ctx.font = '600 13px sans-serif';
+  ctx.textAlign = 'left'; ctx.fillText('Re', w - 28, y0 - 8);
+  ctx.fillText('Im', x0 + 8, 16);
+  // 函数曲线（整段淡色 + 已画部分亮色）
+  if (state.showCurve && state.curve.length > 1){
+    const pts = state.curve;
+    ctx.strokeStyle = '#a9c8ee'; ctx.lineWidth = 1.8; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < pts.length; i++){
+      const sx = toSX(pts[i].x), sy = toSY(pts[i].y);
+      i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy);
+    }
+    ctx.stroke();
+    let idx = pts.length - 1;
+    if (state.seg && state.seg.complete){
+      const d = state.seg.e - state.seg.s;
+      const frac = Math.abs(d) > 1e-12 ? (state.theta - state.seg.s) / d : 1;
+      idx = Math.max(0, Math.min(pts.length - 1, Math.round(frac * (pts.length - 1))));
+    }
+    ctx.strokeStyle = '#1f77b4'; ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    for (let i = 0; i <= idx; i++){
+      const sx = toSX(pts[i].x), sy = toSY(pts[i].y);
+      i ? ctx.lineTo(sx, sy) : ctx.moveTo(sx, sy);
+    }
+    ctx.stroke();
+    // 曲线起点 / 终点标记
+    if (state.seg && state.seg.complete){
+      const ps = pts[0], pe = pts[pts.length - 1];
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(toSX(ps.x) - 3.5, toSY(ps.y) - 3.5, 7, 7);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(toSX(ps.x) - 3.5, toSY(ps.y) - 3.5, 7, 7);
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath(); ctx.arc(toSX(pe.x), toSY(pe.y), 3.5, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.beginPath(); ctx.arc(toSX(pe.x), toSY(pe.y), 3.5, 0, TAU); ctx.stroke();
+    }
+  }
+  // 矢量链
+  if (state.terms.length){
+    const chain = evalTerms(state.terms, state.theta);
+    if (state.showCircles){
+      for (let k = 0; k < state.terms.length; k++){
+        const tr = state.terms[k], tail = chain[k];
+        let R = Math.abs(tr.r) * Math.exp(tr.c * state.theta);
+        if (!isFinite(R) || R > RCLAMP) R = RCLAMP;
+        ctx.strokeStyle = PALETTE[k % PALETTE.length]; ctx.lineWidth = 1.4;
+        ctx.setLineDash([6, 5]);
+        ctx.beginPath(); ctx.arc(toSX(tail.x), toSY(tail.y), R * v.s, 0, TAU); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+    if (state.showVectors){
+      for (let k = 0; k < state.terms.length; k++){
+        const a = chain[k], b = chain[k + 1];
+        const ax = toSX(a.x), ay = toSY(a.y), bx = toSX(b.x), by = toSY(b.y);
+        ctx.strokeStyle = PALETTE[k % PALETTE.length]; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
+        const ang = Math.atan2(by - ay, bx - ax), len = 9;
+        ctx.fillStyle = PALETTE[k % PALETTE.length];
+        ctx.beginPath();
+        ctx.moveTo(bx, by);
+        ctx.lineTo(bx - len * Math.cos(ang - 0.42), by - len * Math.sin(ang - 0.42));
+        ctx.lineTo(bx - len * Math.cos(ang + 0.42), by - len * Math.sin(ang + 0.42));
+        ctx.fill();
+        ctx.fillStyle = '#33404d'; ctx.font = '600 12px Consolas,monospace'; ctx.textAlign = 'center';
+        ctx.fillText('v' + (k + 1), (ax + bx) / 2, (ay + by) / 2 - 6);
+      }
+      for (let k = 0; k < chain.length - 1; k++){
+        const p = chain[k];
+        ctx.fillStyle = '#fff'; ctx.strokeStyle = '#9aa7b5'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(toSX(p.x), toSY(p.y), 3.2, 0, TAU); ctx.fill(); ctx.stroke();
+      }
+    }
+    if (state.showDot){
+      const p = chain[chain.length - 1];
+      ctx.fillStyle = '#111827'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(toSX(p.x), toSY(p.y), 5.5, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = 'rgba(17,24,39,0.35)'; ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(toSX(p.x), toSY(p.y), 9.5, 0, TAU); ctx.stroke();
+    }
+  }
+}
+
+/* ---------------- 控件同步 ---------------- */
+function updatePlayBtn(){ $('playBtn').textContent = state.playing ? '⏸ 暂停' : '▶ 播放'; }
+function refreshSegmentInputs(){
+  $('segS').value = Number(state.seg.s.toFixed(6));
+  $('segE').value = Number(state.seg.e.toFixed(6));
+}
+function refreshPosFromTheta(){
+  const seg = state.seg;
+  if (seg && seg.complete && Math.abs(seg.e - seg.s) > 1e-12)
+    state.pos = Math.max(0, Math.min(1, (state.theta - seg.s) / (seg.e - seg.s)));
+}
+function buildLegend(){
+  const el = $('legend'); el.innerHTML = '';
+  state.terms.forEach((tr, k) => {
+    const d = document.createElement('span');
+    d.innerHTML = '<span class="sw" style="background:' + PALETTE[k % PALETTE.length] + '"></span>v' + (k + 1) + ': ' + termStr(tr);
+    el.appendChild(d);
+  });
+}
+function updateControlsFromState(){
+  refreshSegmentInputs();
+  updatePlayBtn();
+  const scr = $('thetaScrub');
+  scr.min = state.thMin; scr.max = state.thMax; scr.value = state.theta;
+  const segS = $('segS'), segE = $('segE');
+  segS.min = state.thMin; segS.max = state.thMax;
+  segE.min = state.thMin; segE.max = state.thMax;
+}
+function updateReadouts(){
+  const th = state.theta;
+  const fr = fracLabel(th);
+  $('thetaOut').innerHTML = '<b>θ</b> = ' + fmt(th) + (fr !== fmt(th) ? ' <span style="opacity:.7">≈ ' + fr + '</span>' : '');
+  if (!state.terms.length){
+    $('fOut').textContent = '未定义函数';
+    return;
+  }
+  const chain = evalTerms(state.terms, th);
+  const p = chain[chain.length - 1];
+  const abs = Math.hypot(p.x, p.y), arg = Math.atan2(p.y, p.x);
+  $('fOut').innerHTML = '<b>f(θ)</b> = ' + fmt(p.x) + (p.y >= 0 ? ' + ' : ' - ') + fmt(Math.abs(p.y)) + 'i　　<b>|f|</b> = ' + fmt(abs) + '　　<b>arg f</b> = ' + fmt(arg / PI) + 'π';
+}
+
+/* ---------------- 动画 ---------------- */
+function play(){
+  if (!state.seg || !state.seg.complete || !state.terms.length) return;
+  state.pos = 0; state.dir = 1; state.theta = state.seg.s;
+  state.playing = true; state.lastT = null;
+  updatePlayBtn();
+}
+function pause(){ state.playing = false; updatePlayBtn(); }
+function togglePlay(){ state.playing ? pause() : play(); }
+function resetAnim(){
+  state.playing = false; state.pos = 0; state.dir = 1;
+  state.theta = state.seg ? state.seg.s : state.thMin;
+  updatePlayBtn();
+}
+function loop(now){
+  const dt = state.lastT == null ? 0 : (now - state.lastT) / 1000;
+  state.lastT = now;
+  if (state.playing && state.seg && state.seg.complete && state.terms.length){
+    const dur = Math.max(0.2, state.duration);
+    state.pos += dt / dur * state.dir;
+    if (state.loopMode === 'loop'){
+      state.pos -= Math.floor(state.pos);
+    } else if (state.loopMode === 'pingpong'){
+      if (state.pos >= 1){ state.pos = 1; state.dir = -1; }
+      else if (state.pos <= 0){ state.pos = 0; state.dir = 1; }
+    } else {
+      if (state.pos >= 1){ state.pos = 1; state.playing = false; updatePlayBtn(); }
+      else if (state.pos <= 0){ state.pos = 0; state.playing = false; updatePlayBtn(); }
+    }
+    state.theta = state.seg.s + (state.seg.e - state.seg.s) * state.pos;
+    const scr = $('thetaScrub');
+    scr.value = Math.max(scr.min, Math.min(scr.max, state.theta));
+  }
+  drawLeft();
+  drawRight();
+  updateReadouts();
+  requestAnimationFrame(loop);
+}
+
+/* ---------------- 交互 ---------------- */
+// 左侧：点击设置起点/终点；拖拽端点或 θ 圆点微调；拖空白平移；滚轮缩放
+(function(){
+  const cv = $('cvL');
+  const pad = 36;
+  const usable = () => Math.max(cv.clientWidth - 2*pad, 40);
+  const span = () => Math.max(state.thMax - state.thMin, 1e-9);
+  const X = th => pad + (th - state.thMin) / span() * usable();
+  const thAt = x => state.thMin + (x - pad) / usable() * span();
+  let mode = null, startX = 0, startMin = 0, startMax = 0, downX = 0;
+  function pauseForDrag(){
+    if (state.playing){ state.playing = false; updatePlayBtn(); }
+  }
+  cv.addEventListener('pointerdown', e => {
+    const rect = cv.getBoundingClientRect();
+    downX = e.clientX - rect.left;
+    cv.setPointerCapture(e.pointerId);
+    const seg = state.seg;
+    if (seg && seg.e != null){
+      if (Math.abs(downX - X(seg.s)) < 14){ mode = 'markS'; pauseForDrag(); return; }
+      if (Math.abs(downX - X(seg.e)) < 14){ mode = 'markE'; pauseForDrag(); return; }
+    }
+    if (Math.abs(downX - X(state.theta)) < 14){ mode = 'dot'; pauseForDrag(); return; }
+    mode = 'click';
+    startX = downX; startMin = state.thMin; startMax = state.thMax;
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!mode) return;
+    const rect = cv.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (mode === 'markS' || mode === 'markE'){
+      const th = thAt(x);
+      if (mode === 'markS') state.seg.s = th; else state.seg.e = th;
+      state.theta = th; refreshPosFromTheta(); refreshSegmentInputs();
+      state.curve = computeCurve();
+      return;
+    }
+    if (mode === 'dot'){
+      state.theta = thAt(x); refreshPosFromTheta();
+      return;
+    }
+    if (mode === 'click'){
+      if (Math.abs(x - downX) > 5){
+        mode = 'pan';
+        cv.style.cursor = 'grabbing';
+      }
+    }
+    if (mode === 'pan'){
+      const dth = (x - startX) / usable() * span();
+      state.thMin = startMin - dth;
+      state.thMax = startMax - dth;
+      onAxisRangeChanged();
+    }
+  });
+  function endDrag(){
+    if (mode === 'click') doClick();
+    mode = null;
+    cv.style.cursor = '';
+  }
+  cv.addEventListener('pointerup', endDrag);
+  cv.addEventListener('pointercancel', endDrag);
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = cv.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const th = thAt(x);
+    const f = Math.exp(e.deltaY * 0.0012);
+    const newSpan = Math.max(0.03, Math.min(span() * f, 600));
+    if (Math.abs(newSpan - span()) < 1e-12) return;
+    const t = (th - state.thMin) / span();
+    state.thMin = th - t * newSpan;
+    state.thMax = state.thMin + newSpan;
+    onAxisRangeChanged();
+  }, { passive: false });
+  function doClick(){
+    let th = thAt(downX);
+    if ($('snapChk').checked){
+      const st = leftTickStep(cv.clientWidth);
+      th = Math.round(th / st) * st;
+    }
+    const seg = state.seg;
+    if (seg && seg.complete){
+      const xs = X(seg.s), xe = X(seg.e);
+      if (Math.abs(downX - xs) < 14){ seg.s = th; state.theta = th; refreshPosFromTheta(); refreshSegmentInputs(); state.curve = computeCurve(); return; }
+      if (Math.abs(downX - xe) < 14){ seg.e = th; state.theta = th; refreshPosFromTheta(); refreshSegmentInputs(); state.curve = computeCurve(); return; }
+    }
+    if (!seg || seg.complete){
+      state.seg = { s: th, e: null, complete: false };
+      state.theta = th;
+      state.curve = computeCurve();
+    } else {
+      state.seg.e = th; state.seg.complete = true;
+      state.curve = computeCurve();
+      refreshSegmentInputs();
+      play();
+    }
+    updateControlsFromState();
+  }
+})();
+// 右侧：滚轮缩放 / 拖拽平移 / 双指缩放
+(function(){
+  const cv = $('cvR');
+  let drag = null, pinch = null;
+  const pointers = new Map();
+  cv.addEventListener('pointerdown', e => {
+    cv.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1){
+      drag = { x: e.clientX, y: e.clientY, cx: state.view.cx, cy: state.view.cy };
+      cv.classList.add('dragging');
+    } else {
+      drag = null;
+    }
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1){
+      pinch = null;
+      if (drag){
+        state.view.cx = drag.cx + (e.clientX - drag.x);
+        state.view.cy = drag.cy + (e.clientY - drag.y);
+      }
+    } else if (pointers.size === 2){
+      drag = null;
+      const [a, b] = [...pointers.values()];
+      const rect = cv.getBoundingClientRect();
+      const mx = (a.x + b.x) / 2 - rect.left, my = (a.y + b.y) / 2 - rect.top;
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch && pinch.d > 0 && d > 0){
+        const f = d / pinch.d;
+        if (isFinite(f)) zoomAt(mx, my, f);
+      }
+      pinch = { d: d };
+    }
+  });
+  const end = e => {
+    pointers.delete(e.pointerId);
+    if (pointers.size === 0){ drag = null; pinch = null; cv.classList.remove('dragging'); }
+  };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = cv.getBoundingClientRect();
+    zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-e.deltaY * 0.0015));
+  }, { passive: false });
+})();
+
+/* ---------------- 控件事件 ---------------- */
+$('applyBtn').addEventListener('click', applyExpr);
+$('expr').addEventListener('keydown', e => { if (e.key === 'Enter') applyExpr(); });
+$('playBtn').addEventListener('click', togglePlay);
+$('resetBtn').addEventListener('click', resetAnim);
+$('fitBtn').addEventListener('click', fitView);
+$('speed').addEventListener('input', e => {
+  state.duration = parseFloat(e.target.value);
+  $('speedVal').textContent = state.duration + 's';
+});
+$('loopMode').addEventListener('change', e => { state.loopMode = e.target.value; });
+function zoomRange(factor){
+  const c = (state.thMin + state.thMax) / 2;
+  const newSpan = Math.max(0.03, Math.min((state.thMax - state.thMin) * factor, 600));
+  state.thMin = c - newSpan / 2;
+  state.thMax = c + newSpan / 2;
+  onAxisRangeChanged();
+}
+$('zoomInBtn').addEventListener('click', () => zoomRange(1 / 1.5));
+$('zoomOutBtn').addEventListener('click', () => zoomRange(1.5));
+$('resetRangeBtn').addEventListener('click', () => {
+  state.thMin = 0; state.thMax = TAU;
+  onAxisRangeChanged();
+});
+$('tgCircles').addEventListener('change', e => { state.showCircles = e.target.checked; });
+$('tgVectors').addEventListener('change', e => { state.showVectors = e.target.checked; });
+$('tgCurve').addEventListener('change', e => { state.showCurve = e.target.checked; });
+$('tgDot').addEventListener('change', e => { state.showDot = e.target.checked; });
+function onAxisRangeChanged(){
+  $('thMin').value = Number(state.thMin.toFixed(4));
+  $('thMax').value = Number(state.thMax.toFixed(4));
+  const scr = $('thetaScrub');
+  scr.min = state.thMin; scr.max = state.thMax;
+  state.curve = computeCurve();
+  updateControlsFromState();
+}
+function onAxisInput(){
+  let a = parseFloat($('thMin').value), b = parseFloat($('thMax').value);
+  if (!isFinite(a) || !isFinite(b)) return;
+  if (a > b){ const t = a; a = b; b = t; }
+  state.thMin = a; state.thMax = b;
+  onAxisRangeChanged();
+}
+function onSegInput(id){
+  const v = parseFloat($(id).value);
+  if (!isFinite(v)) return;
+  const seg = state.seg;
+  if (id === 'segS'){ seg.s = v; }
+  else { seg.e = v; seg.complete = true; }
+  if (!seg.complete) seg.e = null;
+  state.playing = false; updatePlayBtn();
+  state.theta = seg.s;
+  state.pos = 0; state.dir = 1;
+  state.curve = computeCurve();
+  refreshSegmentInputs();
+}
+$('thMin').addEventListener('change', onAxisInput);
+$('thMax').addEventListener('change', onAxisInput);
+$('segS').addEventListener('change', () => onSegInput('segS'));
+$('segE').addEventListener('change', () => onSegInput('segE'));
+$('thetaScrub').addEventListener('input', e => {
+  state.theta = parseFloat(e.target.value);
+  state.playing = false; updatePlayBtn();
+  refreshPosFromTheta();
+});
+
+/* ---------------- 预设 ---------------- */
+const PRESETS = [
+  ['e^(iθ)', 'e^(iθ)'],
+  ['2e^(iθ)', '2e^(iθ)'],
+  ['e^(iθ)+e^(i2θ)', 'e^(iθ) + e^(i2θ)'],
+  ['e^(iθ)+e^(-i2θ)', 'e^(iθ) + e^(-i2θ)'],
+  ['e^(iθ)+e^(i2θ)+e^(i3θ)', 'e^(iθ) + e^(i2θ) + e^(i3θ)'],
+  ['3e^(iθ)+2e^(-i2θ)+e^(i3θ)', '3e^(iθ) + 2e^(-i2θ) + e^(i3θ)'],
+  ['2e^(iθ)+e^(i2θ)+0.5e^(i3θ)', '2e^(iθ) + e^(i2θ) + 0.5e^(i3θ)'],
+  ['e^(iθ)+e^(iθ)', 'e^(iθ) + e^(iθ)'],
+  ['e^(iθ)+e^(i2θ)+e^(i3θ)+e^(i4θ)', 'e^(iθ) + e^(i2θ) + e^(i3θ) + e^(i4θ)'],
+  ['e^(-0.3θ)e^(iθ)', 'e^(-0.3θ)e^(iθ)'],
+  ['e^(-θ)e^(iθ)', 'e^(-θ)e^(iθ)'],
+  ['e^(0.1θ)e^(iθ)', 'e^(0.1θ)e^(iθ)'],
+  ['2e^(-0.2θ)e^(iθ)+e^(-0.4θ)e^(i2θ)', '2e^(-0.2θ)e^(iθ) + e^(-0.4θ)e^(i2θ)'],
+  ['e^(-0.1θ)e^(iθ)+e^(-0.1θ)e^(-i2θ)', 'e^(-0.1θ)e^(iθ) + e^(-0.1θ)e^(-i2θ)']
+];
+function buildPresets(){
+  const el = $('presets');
+  PRESETS.forEach(([label, expr]) => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.textContent = label;
+    b.title = 'f(θ) = ' + expr;
+    b.addEventListener('click', () => { $('expr').value = expr; applyExpr(); });
+    el.appendChild(b);
+  });
+}
+
+/* ---------------- 初始化 ---------------- */
+state.seg = { s: 0, e: TAU, complete: true };
+$('segS').value = '0';
+$('segE').value = TAU.toFixed(4);
+$('thMin').value = '0';
+$('thMax').value = TAU.toFixed(4);
+const scr = $('thetaScrub');
+scr.min = 0; scr.max = TAU; scr.value = 0;
+buildPresets();
+applyExpr();
+updatePlayBtn();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

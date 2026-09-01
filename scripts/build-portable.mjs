@@ -49,6 +49,9 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
 .card .open-btn{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent);transition:gap .2s ease}
 .card.integral .open-btn{color:var(--accent3)}
 .card.vectors .open-btn{color:#50fa7b}
+.card.calc .icon{background:linear-gradient(135deg,#ffb86c 0%,var(--accent2) 100%);box-shadow:0 4px 16px rgba(255,184,108,0.25)}
+.card.calc .tagline{color:#ffb86c}
+.card.calc .open-btn{color:#ffb86c}
 .card:hover .open-btn{gap:12px}
 .card .open-btn .arrow{font-size:16px}
 .footer{text-align:center;font-size:12px;color:var(--text2);opacity:0.7;line-height:1.8}
@@ -67,6 +70,8 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
       <span>积分可视化</span>
       <span class="sep">·</span>
       <span>矢量运算</span>
+      <span class="sep">·</span>
+      <span>相位动画</span>
       <span class="sep">·</span>
       <span>交互式探索</span>
     </div>
@@ -94,6 +99,14 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
       <div class="tagline">z = a + bi</div>
       <div class="desc">在复平面上以矢量形式呈现复数，将一个矢量头部拖至另一矢量尾部即可首尾相接，直观可视化复数加法。内置四则运算、模与辐角显示、涂鸦标注与单位根预设。</div>
       <div class="features"><span>矢量首尾相接</span><span>拖拽吸附</span><span>复数四则运算</span><span>模与辐角</span><span>涂鸦标注</span></div>
+      <div class="open-btn">打开工具<span class="arrow">→</span></div>
+    </a>
+    <a class="card calc" href="./complex-calculator/index.html">
+      <div class="icon">↻</div>
+      <h2>e^(iθ) 相位矢量动画</h2>
+      <div class="tagline">f(θ) = Σ c·e^(iθ)</div>
+      <div class="desc">在 θ 轴上点两点构成线段，θ 自动缓慢移动；右侧复平面中每个 e^(...) 项对应一个首尾相接的旋转矢量，端点轨迹即函数图像。支持衰变系数（对数螺旋）与随模长变化的虚线圆。</div>
+      <div class="features"><span>旋转矢量首尾相接</span><span>衰变螺旋</span><span>θ 动画播放</span><span>循环模式</span><span>触屏缩放</span></div>
       <div class="open-btn">打开工具<span class="arrow">→</span></div>
     </a>
   </div>
@@ -261,6 +274,15 @@ mkdirSync(vectorsDest, { recursive: true });
 copyFileSync(join(PROJECT, 'vectors', 'index.html'), join(vectorsDest, 'index.html'));
 if (existsSync(join(PROJECT, 'vectors', 'README.md'))) {
   copyFileSync(join(PROJECT, 'vectors', 'README.md'), join(vectorsDest, 'README.md'));
+}
+
+// 3c. 复制 complex-calculator/ 子项目
+log('copying complex-calculator/ ...');
+const calcDest = join(DIST, 'complex-calculator');
+mkdirSync(calcDest, { recursive: true });
+copyFileSync(join(PROJECT, 'complex-calculator', 'index.html'), join(calcDest, 'index.html'));
+if (existsSync(join(PROJECT, 'complex-calculator', 'README.md'))) {
+  copyFileSync(join(PROJECT, 'complex-calculator', 'README.md'), join(calcDest, 'README.md'));
 }
 
 // 4. 写启动页
