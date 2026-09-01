@@ -1,0 +1,99 @@
+# 复变函数工具集 GitHub Release 发布脚本
+# 用法：
+#   1. 先登录 gh（只需一次）：  gh auth login
+#   2. 运行此脚本：            powershell -ExecutionPolicy Bypass -File scripts\publish-release.ps1
+# 或者直接：
+#   npm run release
+$ErrorActionPreference = 'Stop'
+
+$gh = "C:\Program Files\GitHub CLI\gh.exe"
+if (-not (Test-Path $gh)) {
+    $gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
+}
+if (-not $gh) {
+    Write-Host "错误：未找到 gh CLI。请先安装：winget install GitHub.cli" -ForegroundColor Red
+    exit 1
+}
+
+# 检查登录状态
+$authOk = & $gh auth status 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "未登录 GitHub CLI。请先运行：" -ForegroundColor Yellow
+    Write-Host "  gh auth login" -ForegroundColor Cyan
+    Write-Host "选择 GitHub.com → HTTPS → Login with a web browser → 浏览器授权" -ForegroundColor Gray
+    exit 1
+}
+
+$zipPath = Join-Path $PSScriptRoot "..\complex-tools-portable.zip"
+$zipPath = (Resolve-Path $zipPath).Path
+
+if (-not (Test-Path $zipPath)) {
+    Write-Host "错误：找不到 complex-tools-portable.zip，请先运行 npm run build:portable" -ForegroundColor Red
+    exit 1
+}
+
+$version = "v1.0.0"
+$title = "复变函数工具集 $version 离线便携版"
+$notes = @"
+## 复变函数工具集 $version
+
+一个交互式的复变函数可视化与计算工具集，包含两个独立工具。
+
+## 包含工具
+
+### 1. 复变函数可视化计算器
+- 双画板同步映射（z 平面 → w = f(z) 平面）
+- 多种绘图工具：选点/自由线/直线/圆弧/矩形
+- 自定义函数编译器（基于 mathjs）
+- 14 级智能网格吸附
+- 1~5000 倍缩放范围
+- 绘图预览实时同步到 w 平面
+
+### 2. 复变函数积分计算器
+- z 平面绘制路径，w 平面实时展示 f(z)·dz 积分过程
+- 多种绘图工具：画笔/直线/折线/三点圆弧/圆/矩形
+- 多线段对比 + 动画播放
+- 网格吸附
+
+## 使用方式
+
+1. 下载 zip 文件
+2. 解压到任意位置（桌面/文档/U盘都行）
+3. 双击 ``start.bat`` 启动本地服务器 + 自动打开浏览器
+4. 在启动页选择要使用的工具
+5. 关闭弹出的黑色命令行窗口即可停止服务器
+
+## 前置条件
+
+- 需要已安装 Node.js（免费，https://nodejs.org 下载 LTS）
+- 主流现代浏览器（Chrome / Edge / Firefox / Safari）
+
+## 技术规格
+
+- 体积：$([math]::Round((Get-Item $zipPath).Length/1KB, 1)) KB
+- 完全离线运行，无需联网
+- 启动器：Node.js 内置 HTTP 服务器（零依赖）
+- 支持 Windows（双击 start.bat）/ macOS / Linux（命令行 node start.js）
+- 入口：start.bat（Windows）/ launcher.html（启动页）
+- 源码仓库：https://github.com/F-3-H/complex-functions
+"@
+
+Write-Host "=== 创建 GitHub Release ===" -ForegroundColor Cyan
+Write-Host "版本: $version"
+Write-Host "标题: $title"
+Write-Host "附件: $zipPath ($([math]::Round((Get-Item $zipPath).Length/1KB, 1)) KB)"
+Write-Host ""
+
+& $gh release create $version $zipPath `
+    --title $title `
+    --notes $notes `
+    --repo F-3-H/complex-functions
+
+if ($LASTEXITCODE -eq 0) {
+    Write-Host ""
+    Write-Host "=== 发布成功 ===" -ForegroundColor Green
+    Write-Host "Release 地址: https://github.com/F-3-H/complex-functions/releases/tag/$version"
+} else {
+    Write-Host "发布失败，请检查错误信息" -ForegroundColor Red
+    exit 1
+}

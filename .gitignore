@@ -18,6 +18,11 @@ dist-ssr
 # 常驻服务运行日志
 server.log
 
+# 便携版 zip 产物与临时测试
+complex-tools-portable.zip
+complex-tools-portable/
+_zip_test/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

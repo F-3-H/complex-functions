@@ -4,6 +4,8 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vite.dev/config/
 export default defineConfig({
+  // 使用相对路径，兼容子目录部署 + 本地静态服务器
+  base: './',
   build: {
     sourcemap: 'hidden',
   },
@@ -15,7 +17,7 @@ export default defineConfig({
         ],
       },
     }),
-    tsconfigPaths()
+    tsconfigPaths(),
   ],
   optimizeDeps: {
     // 预声明全部依赖，避免运行时二次发现导致 react / react-dom 预构建版本分裂

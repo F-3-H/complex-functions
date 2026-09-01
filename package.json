@@ -18,7 +18,9 @@
     "serve:uninstall": "node scripts/serve.mjs uninstall",
     "serve:rebuild": "node scripts/serve.mjs rebuild",
     "serve:autostart": "node scripts/serve.mjs autostart",
-    "deploy": "vercel --prod --yes"
+    "deploy": "vercel --prod --yes",
+    "build:portable": "node scripts/build-portable.mjs",
+    "release": "powershell -ExecutionPolicy Bypass -File scripts/publish-release.ps1"
   },
   "dependencies": {
     "@types/three": "^0.185.4",
