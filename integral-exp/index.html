@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>积分可视化计算器 · ∫e^(st)dt 复平面积分</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@600;700;900&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+:root{
+  --bg:#0a101d;
+  --card:rgba(17,26,44,.8);
+  --card-solid:#111a2c;
+  --line:rgba(148,163,184,.16);
+  --line-strong:rgba(148,163,184,.34);
+  --ink:#e8e6df;
+  --ink-dim:#9aa7bd;
+  --ink-faint:#6b7a93;
+  --teal:#2dd4bf;
+  --cyan:#22d3ee;
+  --amber:#fbbf24;
+  --sky:#38bdf8;
+  --orange:#fb923c;
+  --rose:#fb7185;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --serif:"Noto Serif SC","Songti SC","SimSun",serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  background:
+    radial-gradient(1100px 520px at 84% -8%, rgba(45,212,191,.075), transparent 60%),
+    radial-gradient(900px 520px at -6% 6%, rgba(56,189,248,.05), transparent 55%),
+    var(--bg);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1360px;margin:0 auto;padding:22px clamp(14px,3vw,34px) 64px}
+
+/* ===== Hero ===== */
+.hero{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.65fr);gap:22px;align-items:stretch;margin-bottom:22px}
+.kicker{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--teal);font-weight:600;margin-bottom:10px}
+h1{font-family:var(--serif);font-size:clamp(30px,4.4vw,48px);font-weight:900;margin:0 0 12px;line-height:1.12;letter-spacing:.01em}
+.lead{color:var(--ink-dim);font-size:15.5px;line-height:1.85;margin:0 0 20px;max-width:62ch}
+.lead .m{color:var(--ink);font-family:var(--serif);font-style:normal}
+.threepack{display:flex;flex-wrap:wrap;gap:10px}
+.tp{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-size:13px;color:var(--ink-dim)}
+.tp-n{font-family:var(--mono);font-size:11px;color:var(--teal);letter-spacing:.08em}
+.tp em{font-style:normal;color:var(--ink);font-family:var(--serif)}
+.hero-eq{display:flex;flex-direction:column;justify-content:center;gap:12px}
+.eq-main{font-family:var(--serif);font-size:clamp(30px,3.6vw,42px);font-weight:700;color:var(--ink);text-align:center;letter-spacing:.02em}
+.eq-main sub,.eq-main sup{font-size:.5em}
+.eq-sub{font-family:var(--mono);font-size:13.5px;color:var(--ink-dim);text-align:center;line-height:1.7}
+.eq-euler{font-family:var(--serif);font-size:15px;color:var(--teal);text-align:center;border-top:1px dashed var(--line);padding-top:12px}
+
+/* ===== Card ===== */
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.card-head h2{font-family:var(--serif);font-size:17px;font-weight:700;margin:0;letter-spacing:.02em}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-dim)}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+/* ===== Viewer layout ===== */
+.viewer{display:grid;grid-template-columns:minmax(0,1fr) 356px;gap:20px;margin-bottom:20px;align-items:start}
+.plane-wrap{position:relative;border-radius:12px;overflow:hidden;background:
+  linear-gradient(180deg, rgba(148,163,184,.05), rgba(148,163,184,.02) 40%, transparent),
+  #0c1424;
+  border:1px solid var(--line);
+  height:clamp(380px,62vh,640px)}
+#plane{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#plane.grabbing{cursor:grabbing}
+.view-btn{position:absolute;top:12px;right:12px;z-index:3;min-height:34px;height:34px;padding:0 13px;border-radius:9px;border:1px solid var(--line);background:rgba(12,20,36,.85);color:var(--ink-dim);font-family:var(--sans);font-size:12px;cursor:pointer;transition:border-color .15s,color .15s}
+.view-btn:hover{border-color:var(--teal);color:var(--teal)}
+.plane-note{font-size:12.5px;color:var(--ink-faint);margin-top:10px;line-height:1.8}
+.plane-note b{color:var(--ink-dim);font-weight:600}
+
+/* ===== Panel ===== */
+.panel{display:flex;flex-direction:column;gap:18px}
+.panel-head{border-bottom:1px solid var(--line);padding-bottom:14px}
+.panel-head h2{font-family:var(--serif);font-size:17px;font-weight:700;margin:0 0 10px}
+.s-badge{font-family:var(--mono);font-size:15px;color:var(--cyan);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.22);border-radius:10px;padding:8px 12px;display:inline-block;margin-bottom:10px}
+.euler-line{font-family:var(--serif);font-size:13.5px;color:var(--ink-dim);line-height:1.7}
+.euler-line sup{font-size:.72em}
+
+.ctrl{display:flex;flex-direction:column;gap:16px}
+.ctrl-row{display:flex;flex-direction:column;gap:7px}
+.ctrl-lab{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;color:var(--ink)}
+.ctrl-lab .mono{font-family:var(--mono);color:var(--amber);font-size:14px;font-weight:600}
+.ctrl-hint{font-size:11.5px;color:var(--ink-faint)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:28px;background:transparent;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:5px;border-radius:3px;background:linear-gradient(90deg,rgba(45,212,191,.5),rgba(251,191,36,.5));border:1px solid var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ink);border:3px solid var(--teal);margin-top:-7px;box-shadow:0 1px 6px rgba(0,0,0,.5)}
+input[type=range]::-moz-range-track{height:5px;border-radius:3px;background:rgba(148,163,184,.25)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--ink);border:3px solid var(--teal)}
+.s-plane-box{padding:4px 0 12px}
+.s-plane{width:100%;height:190px;display:block;border:1px solid var(--line);border-radius:12px;background:rgba(10,16,29,.62);cursor:grab;touch-action:none}
+.s-plane:active{cursor:grabbing}
+
+.transport{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{min-height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card-solid);color:var(--ink);font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:background .15s,border-color .15s,transform .05s}
+.btn:hover{border-color:var(--teal);background:rgba(45,212,191,.1)}
+.btn:active{transform:translateY(1px)}
+.btn.play{background:rgba(45,212,191,.16);border-color:rgba(45,212,191,.5);color:var(--teal)}
+.btn.play:hover{background:rgba(45,212,191,.26)}
+.btn svg{width:18px;height:18px;flex:none}
+.btn.ghost{background:transparent;color:var(--ink-dim)}
+
+.presets{display:flex;flex-direction:column;gap:9px}
+.preset-title{font-size:12px;letter-spacing:.14em;color:var(--ink-faint);text-transform:uppercase}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.preset{min-height:44px;border-radius:11px;border:1px solid var(--line);background:rgba(20,31,52,.5);color:var(--ink-dim);font-size:13px;font-family:var(--mono);cursor:pointer;padding:6px 10px;transition:all .15s}
+.preset:hover{border-color:var(--amber);color:var(--amber);background:rgba(251,191,36,.08)}
+.preset b{display:block;font-weight:700;color:var(--ink);font-size:13px}
+
+/* ===== Lower ===== */
+.lower{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,.75fr);gap:20px;align-items:stretch}
+.comp-wrap{position:relative;border-radius:12px;overflow:hidden;background:#0c1424;border:1px solid var(--line);height:300px}
+#comp{display:block;width:100%;height:100%}
+.num-card h2{font-family:var(--serif);font-size:17px;font-weight:700;margin:0 0 14px}
+.num-table{width:100%;border-collapse:collapse;font-size:13px}
+.num-table tr+tr td{border-top:1px solid var(--line)}
+.num-table td{padding:9px 4px;vertical-align:top}
+.num-table td:first-child{color:var(--ink-faint);white-space:nowrap;padding-right:10px}
+.num-table td .mono{font-family:var(--mono);font-size:13px;color:var(--ink);word-break:break-all}
+.num-table td .mono.good{color:var(--teal)}
+.num-table td .mono.err{color:var(--rose)}
+.progress{margin-top:6px}
+.progress-bar{height:6px;border-radius:3px;background:rgba(148,163,184,.15);overflow:hidden}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--teal));border-radius:3px}
+.progress-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:6px}
+
+/* ===== Responsive ===== */
+@media (max-width:960px){
+  .hero{grid-template-columns:1fr}
+  .viewer{grid-template-columns:1fr}
+  .lower{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .threepack{flex-direction:column}
+  .preset-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== Hero ===== -->
+  <header class="hero">
+    <div class="hero-main">
+      <div class="kicker">复变积分 · 可视化仪器</div>
+      <h1>积分可视化计算器</h1>
+      <p class="lead">把「微小量累加」的思想画在复平面上。每个实数微元 <span class="m">dt</span>，被复数 <span class="m">e<sup>st</sup></span> 拉伸旋转成一个向量；把这些小向量首尾相接、依次相加——累积出的轨迹，就是积分本身。</p>
+      <div class="threepack">
+        <div class="tp"><span class="tp-n">01</span><span>微元 <em>dt</em> 经被积函数变化</span></div>
+        <div class="tp"><span class="tp-n">02</span><span>欧拉公式拆成 cos + i·sin</span></div>
+        <div class="tp"><span class="tp-n">03</span><span>小向量首尾相接求和</span></div>
+      </div>
+    </div>
+    <div class="hero-eq card">
+      <div class="eq-main">∫<sub>0</sub><sup>T</sup> e<sup>st</sup> dt</div>
+      <div class="eq-sub">= lim<sub>N→∞</sub> Σ<sub>k=0</sub><sup>N-1</sup> e<sup>s·t<sub>k</sub></sup>·Δt ， Δt = T/N</div>
+      <div class="eq-euler">欧拉公式 &nbsp; e<sup>st</sup> = e<sup>at</sup>(cos bt + i·sin bt)</div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== Viewer: plane + panel ===== -->
+    <section class="viewer">
+      <div class="plane-card card">
+        <div class="card-head">
+          <h2>复平面 · 微元向量链</h2>
+          <div class="legend">
+            <span class="lg"><i style="background:var(--cyan)"></i>起点 t=0</span>
+            <span class="lg"><i style="background:var(--orange)"></i>终点 t=T</span>
+            <span class="lg"><i style="background:var(--teal)"></i>当前累加位置</span>
+          </div>
+        </div>
+        <div class="plane-wrap">
+          <canvas id="plane"></canvas>
+          <button class="view-btn" id="fitBtn" aria-label="复位视图">复位视图</button>
+        </div>
+        <div class="plane-note"><b>滚轮缩放 · 按住拖拽平移 · 双击或点右上角复位。</b>虚线：当前微元 e^(st)·Δt 的实部 / 虚部；实线箭头：该微元向量。播放动画，看小向量从原点首尾相接。</div>
+      </div>
+
+      <aside class="panel card">
+        <div class="panel-head">
+          <h2>参数 · s = a + bi</h2>
+          <div class="s-badge" id="sBadge">s = 0 + 1i</div>
+          <div class="euler-line">代入后：e<sup>st</sup> = e<sup>at</sup>(cos bt + i·sin bt)</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="s-plane-box">
+            <div class="ctrl-lab"><span>s 复平面 · 拖动点调节 a、b</span><span class="mono" id="sXY">0.00, 1.00</span></div>
+            <canvas id="splane" class="s-plane" width="360" height="190"></canvas>
+            <div class="ctrl-hint">横轴 Re(s)=a（增长/衰减），纵轴 Im(s)=b（旋转频率）。拖动调节 s 点；Shift+左键拖动平移视图；滚轮缩放；双击复位</div>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-lab"><span>T · 积分上限</span><span class="mono" id="tVal">6.28</span></div>
+            <input type="range" id="tSl" min="0.5" max="10" step="0.05" value="6.283">
+            <div class="ctrl-hint">t 从 0 累加到 T，路径有多长</div>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-lab"><span>N · 微元分段数</span><span class="mono" id="nVal">300</span></div>
+            <input type="range" id="nSl" min="0" max="100" step="1" value="58">
+            <div class="ctrl-hint">把 T 切成 N 份，N 越大求和越接近解析解</div>
+          </div>
+        </div>
+
+        <div class="transport">
+          <button class="btn play" id="playBtn" aria-label="播放或暂停动画"><svg id="playIco" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg><span id="playTxt">播放累加</span></button>
+          <button class="btn" id="resetBtn" aria-label="回到起点"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 2.64-6.36L3 8"/><path d="M3 3v5h5"/></svg><span>回到起点</span></button>
+        </div>
+
+        <div class="presets">
+          <div class="preset-title">预设波形</div>
+          <div class="preset-grid">
+            <button class="preset" data-a="0" data-b="1" data-T="6.283"><b>纯旋转 s=i</b>圆弧</button>
+            <button class="preset" data-a="0" data-b="2" data-T="12.566"><b>快速旋转 s=2i</b>多圈圆</button>
+            <button class="preset" data-a="0.5" data-b="1" data-T="12.566"><b>增长螺旋</b>s=0.5+i</button>
+            <button class="preset" data-a="-0.5" data-b="1" data-T="12.566"><b>衰减螺旋</b>s=-0.5+i</button>
+            <button class="preset" data-a="1" data-b="0" data-T="2"><b>纯增长 s=1</b>指数膨胀</button>
+            <button class="preset" data-a="0" data-b="0" data-T="3"><b>常函数 s=0</b>直线</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ===== Lower: components + numeric ===== -->
+    <section class="lower">
+      <div class="comp-card card">
+        <div class="card-head">
+          <h2>分量 · 随 t 累加</h2>
+          <div class="legend">
+            <span class="lg"><i style="background:var(--amber)"></i>实部 Re ∫e^(st)dt</span>
+            <span class="lg"><i style="background:var(--sky)"></i>虚部 Im ∫e^(st)dt</span>
+          </div>
+        </div>
+        <div class="comp-wrap"><canvas id="comp"></canvas></div>
+      </div>
+
+      <div class="num-card card">
+        <h2>数值验证</h2>
+        <table class="num-table">
+          <tr><td>黎曼和</td><td><span class="mono" id="numRiemann">—</span></td></tr>
+          <tr><td>解析解 (e<sup>sT</sup>−1)/s</td><td><span class="mono" id="numAnalytic">—</span></td></tr>
+          <tr><td>绝对误差 |Δ|</td><td><span class="mono err" id="numErr">—</span></td></tr>
+          <tr><td>相对误差</td><td><span class="mono err" id="numRel">—</span></td></tr>
+          <tr><td>Δ t = T / N</td><td><span class="mono" id="numDt">—</span></td></tr>
+          <tr><td>当前部分积分</td><td><span class="mono good" id="numCur">—</span></td></tr>
+        </table>
+        <div class="progress">
+          <div class="progress-bar"><div class="progress-fill" id="progFill"></div></div>
+          <div class="progress-label"><span>t = 0</span><span id="progTxt">t = 0 / T</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* =========================================================
+ * 积分可视化计算器
+ * ∫_0^T e^(st) dt , s = a + bi
+ * 图中思想：每个实数微元 dt 被复数 e^(st) 拉伸旋转成小向量，
+ * 再把这些小向量首尾相接、依次相加，累积轨迹就是积分。
+ * ========================================================= */
+'use strict';
+const $ = id => document.getElementById(id);
+const state = { a:0, b:1, T:2*Math.PI, N:300, t:0, playing:false };
+let cache = null; // {dt, pts:[{re,im}...]}
+
+/* ---------- 数值核心 ---------- */
+function computePath(){
+  const {a,b,T,N} = state;
+  const dt = T/N;
+  const pts = new Array(N+1);
+  pts[0] = {re:0, im:0};
+  for(let k=0;k<N;k++){
+    const tk = k*dt;
+    const e = Math.exp(a*tk);
+    const er = e*Math.cos(b*tk), ei = e*Math.sin(b*tk);
+    pts[k+1] = { re: pts[k].re + er*dt, im: pts[k].im + ei*dt };
+  }
+  cache = {dt, pts};
+}
+/* 解析解 ∫_0^t e^(sτ)dτ = (e^(st)-1)/s */
+function analyticAt(t){
+  const {a,b} = state;
+  const e = Math.exp(a*t);
+  const u = e*Math.cos(b*t) - 1, v = e*Math.sin(b*t);
+  const d = a*a + b*b;
+  if(d < 1e-12) return {re:t, im:0};
+  return { re:(u*a + v*b)/d, im:(v*a - u*b)/d };
+}
+/* 动画位置的平滑插值（部分积分） */
+function posAt(t){
+  if(t <= 0) return {re:0, im:0};
+  const {dt, pts} = cache;
+  const N = pts.length - 1;
+  if(t >= state.T) return pts[N];
+  const k = Math.floor(t/dt);
+  const frac = t/dt - k;
+  const tk = k*dt;
+  const e = Math.exp(state.a*tk);
+  const er = e*Math.cos(state.b*tk), ei = e*Math.sin(state.b*tk);
+  return { re: pts[k].re + er*dt*frac, im: pts[k].im + ei*dt*frac };
+}
+
+/* ---------- 视图（缩放 / 平移） ---------- */
+const view = { ox:0, oy:0, zoom:200, touched:false }; // 视口中心的复平面坐标 + 像素/单位
+// s 复平面视口：中心坐标 + 半范围（支持平移 / 缩放）
+const sView = { cx:0, cy:0, rx:5, ry:5, touched:false };
+function fitSView(){ sView.cx=0; sView.cy=0; sView.rx=5; sView.ry=5; sView.touched=false; }
+function fitView(){
+  const c = $('plane');
+  const W = c.clientWidth||1, H = c.clientHeight||1;
+  let M = 0.5;
+  for(const p of cache.pts){ const m = Math.hypot(p.re,p.im); if(m>M) M=m; }
+  view.zoom = Math.max((Math.min(W,H)*0.9)/(2*M*1.2), 6);
+  view.ox = 0; view.oy = 0; view.touched = false;
+}
+/* ---------- 复平面绘制 ---------- */
+function niceStep(raw){
+  if(!(raw>0)) return 0.5;
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  const n = raw/pow;
+  let m = 1;
+  if(n >= 5) m = 5; else if(n >= 2) m = 2;
+  return m*pow;
+}
+function fmtTick(v, step){
+  const dec = step>=1 ? 0 : (step>=0.1 ? 1 : (step>=0.01 ? 2 : 3));
+  const s = v.toFixed(dec);
+  return s.indexOf('.') >= 0 ? s.replace(/0+$/,'').replace(/\.$/,'') : s;
+}
+function drawPlane(){
+  const c = $('plane'), ctx = c.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const W = c.clientWidth, H = c.clientHeight;
+  if(!W || !H) return;
+  if(c.width !== W*dpr || c.height !== H*dpr){ c.width = W*dpr; c.height = H*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  const {pts} = cache;
+  const t = Math.min(state.t, state.T);
+  const tIdx = Math.min(pts.length-1, Math.floor(t / cache.dt));
+  const cx = W/2, cy = H/2;
+  // 全部世界元素（网格、坐标轴、刻度、曲线）统一映射：随视图整体平移缩放
+  const X = re => cx + (re - view.ox)*view.zoom;
+  const Y = im => cy - (im - view.oy)*view.zoom;
+  const reMin = view.ox - W/(2*view.zoom), reMax = view.ox + W/(2*view.zoom);
+  const imMin = view.oy - H/(2*view.zoom), imMax = view.oy + H/(2*view.zoom);
+  const mono = '11px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  // ---- 网格（随视图整体移动） ----
+  const step = niceStep(72/view.zoom);
+  ctx.font = mono; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(148,163,184,0.10)';
+  for(let v=Math.ceil(reMin/step)*step; v<=reMax; v+=step){
+    ctx.beginPath(); ctx.moveTo(X(v),0); ctx.lineTo(X(v),H); ctx.stroke();
+  }
+  for(let v=Math.ceil(imMin/step)*step; v<=imMax; v+=step){
+    ctx.beginPath(); ctx.moveTo(0,Y(v)); ctx.lineTo(W,Y(v)); ctx.stroke();
+  }
+  // ---- 坐标轴（画在世界坐标 0 处，随视图整体移动） ----
+  const ox = X(0), oy = Y(0);
+  ctx.strokeStyle = 'rgba(203,213,225,0.55)'; ctx.lineWidth = 1.4;
+  if(oy > 0 && oy < H){ ctx.beginPath(); ctx.moveTo(0,oy); ctx.lineTo(W,oy); ctx.stroke(); }
+  if(ox > 0 && ox < W){ ctx.beginPath(); ctx.moveTo(ox,0); ctx.lineTo(ox,H); ctx.stroke(); }
+  // ---- 刻度标签：实轴下方居中、虚轴左侧右对齐；跳过零刻度与近原点标签 ----
+  ctx.fillStyle = 'rgba(148,163,184,0.72)';
+  if(oy > 0 && oy < H){
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(let v=Math.ceil(reMin/step)*step; v<=reMax; v+=step){
+      if(Math.abs(v) < step*1e-9) continue;
+      if(Math.abs(X(v)-ox) < 34) continue;
+      ctx.fillText(fmtTick(v,step), X(v), oy+5);
+    }
+  }
+  if(ox > 0 && ox < W){
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(let v=Math.ceil(imMin/step)*step; v<=imMax; v+=step){
+      if(Math.abs(v) < step*1e-9) continue;
+      if(Math.abs(Y(v)-oy) < 34) continue;
+      ctx.fillText(fmtTick(v,step), ox-6, Y(v));
+    }
+  }
+  // ---- 原点标记（随视图移动） ----
+  ctx.fillStyle = 'rgba(203,213,225,0.5)';
+  ctx.beginPath(); ctx.arc(ox,oy,2.5,0,Math.PI*2); ctx.fill();
+  // ---- 目标路径（完整，亮青，与背景坐标系区分） ----
+  ctx.beginPath();
+  ctx.moveTo(X(pts[0].re), Y(pts[0].im));
+  for(let k=1;k<pts.length;k++) ctx.lineTo(X(pts[k].re), Y(pts[k].im));
+  ctx.strokeStyle = 'rgba(34,211,238,0.5)';
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  // ---- 已累加彩色路径（t 之前） ----
+  const Pnow = posAt(t);
+  if(tIdx > 0){
+    const grad = ctx.createLinearGradient(X(pts[0].re), Y(pts[0].im), X(Pnow.re), Y(Pnow.im));
+    grad.addColorStop(0,'#22d3ee');
+    grad.addColorStop(1,'#fb923c');
+    ctx.beginPath();
+    ctx.moveTo(X(pts[0].re), Y(pts[0].im));
+    for(let k=1;k<=tIdx;k++) ctx.lineTo(X(pts[k].re), Y(pts[k].im));
+    ctx.lineTo(X(Pnow.re), Y(Pnow.im));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 3.6;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+  // ---- 积分结果终点点（醒目标记：∫e^(sT)dt 的累加终点） ----
+  const ep = pts[pts.length-1];
+  const epx = X(ep.re), epy = Y(ep.im);
+  ctx.strokeStyle = 'rgba(251,191,36,0.45)'; ctx.lineWidth = 8;
+  ctx.beginPath(); ctx.arc(epx, epy, 11, 0, Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath(); ctx.arc(epx, epy, 7, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#0a101d'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.arc(epx, epy, 7, 0, Math.PI*2); ctx.stroke();
+  ctx.font = mono;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = 'rgba(251,191,36,0.95)';
+  const esgn = ep.im < 0 ? '−' : '+';
+  ctx.fillText('∫ = ' + ep.re.toFixed(2) + ' ' + esgn + ' ' + Math.abs(ep.im).toFixed(2) + 'i', epx+16, epy-9);
+  // ---- 微元箭头（仅当分段不太密） ----
+  if(state.N <= 480 && tIdx > 0){
+    for(let k=0;k<tIdx;k++){
+      const x0=X(pts[k].re), y0=Y(pts[k].im);
+      const x1=X(pts[k+1].re), y1=Y(pts[k+1].im);
+      const dx=x1-x0, dy=y1-y0, len=Math.hypot(dx,dy);
+      if(len < 6) continue;
+      const hue = 187 + (k/Math.max(1,state.N))*35; // 青 -> 橙
+      ctx.strokeStyle = `hsla(${hue},85%,60%,0.85)`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+      const ang = Math.atan2(dy,dx), s=Math.min(5,len*0.45);
+      ctx.fillStyle = `hsla(${hue},85%,60%,0.9)`;
+      ctx.beginPath();
+      ctx.moveTo(x1,y1);
+      ctx.lineTo(x1-s*Math.cos(ang-0.5), y1-s*Math.sin(ang-0.5));
+      ctx.lineTo(x1-s*Math.cos(ang+0.5), y1-s*Math.sin(ang+0.5));
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // ---- 当前微元向量分解（画笔位置） ----
+  if(t < state.T - 1e-9 && tIdx < pts.length-1){
+    const k = tIdx;
+    const tk = k*cache.dt;
+    const e = Math.exp(state.a*tk);
+    const er = e*Math.cos(state.b*tk), ei = e*Math.sin(state.b*tk);
+    const dte = cache.dt * Math.min(1, (t-tk)/cache.dt + 1); // 剩余微元长度
+    const dre = er*dte*view.zoom, dim = ei*dte*view.zoom;
+    const px = X(Pnow.re), py = Y(Pnow.im);
+    ctx.setLineDash([5,4]);
+    ctx.strokeStyle = 'rgba(251,191,36,0.75)'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+dre, py); ctx.stroke();
+    ctx.strokeStyle = 'rgba(56,189,248,0.75)';
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px, py-dim); ctx.stroke();
+    ctx.setLineDash([]);
+    const ex=px+dre, ey=py-dim;
+    const al = Math.hypot(ex-px, ey-py);
+    if(al > 4){
+      ctx.strokeStyle = 'rgba(45,212,191,0.95)'; ctx.lineWidth = 2.2;
+      ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(ex,ey); ctx.stroke();
+      const ang=Math.atan2(ey-py, ex-px), s=6;
+      ctx.fillStyle = 'rgba(45,212,191,1)';
+      ctx.beginPath(); ctx.moveTo(ex,ey);
+      ctx.lineTo(ex-s*Math.cos(ang-0.45), ey-s*Math.sin(ang-0.45));
+      ctx.lineTo(ex-s*Math.cos(ang+0.45), ey-s*Math.sin(ang+0.45));
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // ---- 画笔（当前累加位置）+ 坐标投影 ----
+  const px = X(Pnow.re), py = Y(Pnow.im);
+  ctx.setLineDash([3,5]);
+  ctx.strokeStyle = 'rgba(148,163,184,0.4)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, cy); ctx.stroke(); // 到实轴
+  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cx, py); ctx.stroke(); // 到虚轴
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(45,212,191,0.95)';
+  ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(45,212,191,0.55)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(px, py, 10, 0, Math.PI*2); ctx.stroke();
+  // 投影坐标读数（跟随画笔；接近原点时隐藏，避免与 O 标签重影）
+  if(Math.hypot(Pnow.re, Pnow.im) >= step*0.5){
+    ctx.font = mono;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(45,212,191,0.9)';
+    ctx.fillText('(' + Pnow.re.toFixed(2) + ', ' + Pnow.im.toFixed(2) + ')', px+14, Math.max(py-8, 14));
+  }
+}
+/* ---------- 分量曲线绘制 ---------- */
+function drawComp(){
+  const c = $('comp'), ctx = c.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const W = c.clientWidth, H = c.clientHeight;
+  if(c.width !== W*dpr || c.height !== H*dpr){ c.width = W*dpr; c.height = H*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  const S = 360;
+  const data = [];
+  let ymin=0, ymax=0;
+  for(let i=0;i<=S;i++){
+    const tt = state.T*i/S;
+    const z = analyticAt(tt);
+    data.push({t:tt, re:z.re, im:z.im});
+    if(z.re<ymin)ymin=z.re; if(z.re>ymax)ymax=z.re;
+    if(z.im<ymin)ymin=z.im; if(z.im>ymax)ymax=z.im;
+  }
+  if(ymax-ymin < 1e-9){ ymin -= 0.5; ymax += 0.5; }
+  const pad = (ymax-ymin)*0.18;
+  ymin -= pad; ymax += pad;
+
+  const padL = 46, padR = 12, padT = 12, padB = 22;
+  const pw = W-padL-padR, ph = H-padT-padB;
+  const Yy = v => padT + (ymax - v)/(ymax-ymin)*ph;
+  const Xx = t => padL + t/state.T*pw;
+
+  // 水平网格
+  ctx.font = '10px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.strokeStyle = 'rgba(148,163,184,0.12)'; ctx.lineWidth = 1;
+  const ystep = niceStep((ymax-ymin)/4);
+  for(let v=Math.ceil(ymin/ystep)*ystep; v<=ymax; v+=ystep){
+    const gy = Yy(v);
+    ctx.beginPath(); ctx.moveTo(padL,gy); ctx.lineTo(W-padR,gy); ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.7)';
+    ctx.fillText(v.toFixed(Math.abs(v)>=10?0:(Math.abs(v)>=1?1:2)), padL-6, gy);
+  }
+  // 零点线
+  ctx.strokeStyle = 'rgba(203,213,225,0.4)';
+  ctx.beginPath(); ctx.moveTo(padL, Yy(0)); ctx.lineTo(W-padR, Yy(0)); ctx.stroke();
+  // t 轴刻度
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillStyle = 'rgba(148,163,184,0.7)';
+  for(let i=0;i<=4;i++){
+    const tt = state.T*i/4, gx = Xx(tt);
+    ctx.beginPath(); ctx.moveTo(gx,H-padB+3); ctx.lineTo(gx,H-padB+7); ctx.stroke();
+    ctx.fillText(tt.toFixed(tt>=10?0:1), gx, H-padB+8);
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.8)';
+  ctx.fillText('t →', W-padR-6, H-padB+8);
+
+  // 曲线
+  function curve(key, color){
+    ctx.beginPath();
+    for(let i=0;i<data.length;i++){
+      const x=Xx(data[i].t), y=Yy(data[i][key]);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.lineJoin='round';
+    ctx.stroke();
+  }
+  curve('re', '#fbbf24');
+  curve('im', '#38bdf8');
+
+  // 当前时刻竖线
+  const tc = Math.min(state.t, state.T);
+  const gx = Xx(tc);
+  ctx.strokeStyle = 'rgba(45,212,191,0.7)';
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(gx,padT); ctx.lineTo(gx,H-padB); ctx.stroke();
+  ctx.setLineDash([]);
+  const zc = analyticAt(tc);
+  ctx.fillStyle = '#2dd4bf';
+  ctx.beginPath(); ctx.arc(gx, Yy(zc.re), 4.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(gx, Yy(zc.im), 4.5, 0, Math.PI*2); ctx.fill();
+}
+
+/* ---------- s 复平面绘制 ---------- */
+function drawSPlane(){
+  const c = $('splane'), ctx = c.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  const W = c.clientWidth, H = c.clientHeight;
+  if(!W || !H) return;
+  if(c.width !== W*dpr || c.height !== H*dpr){ c.width = W*dpr; c.height = H*dpr; }
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  // 视口范围随 sView 动态变化（支持平移 / 缩放）
+  const R = {
+    reMin: sView.cx - sView.rx, reMax: sView.cx + sView.rx,
+    imMin: sView.cy - sView.ry, imMax: sView.cy + sView.ry
+  };
+  const X = a => (a-R.reMin)/(R.reMax-R.reMin)*W;
+  const Y = b => (R.imMax-b)/(R.imMax-R.imMin)*H;
+  const mono = '10px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  // 动态网格步长（随缩放自适应）
+  const sxStep = niceStep((R.reMax-R.reMin)/5);
+  const syStep = niceStep((R.imMax-R.imMin)/4);
+  ctx.font = mono; ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(148,163,184,0.10)';
+  for(let v=Math.ceil(R.reMin/sxStep)*sxStep; v<=R.reMax; v+=sxStep){
+    ctx.beginPath(); ctx.moveTo(X(v),0); ctx.lineTo(X(v),H); ctx.stroke();
+  }
+  for(let v=Math.ceil(R.imMin/syStep)*syStep; v<=R.imMax; v+=syStep){
+    ctx.beginPath(); ctx.moveTo(0,Y(v)); ctx.lineTo(W,Y(v)); ctx.stroke();
+  }
+  // 坐标轴（画在世界坐标 0 处，随视图整体移动）
+  const axX = X(0), axY = Y(0);
+  ctx.strokeStyle = 'rgba(203,213,225,0.42)'; ctx.lineWidth = 1.3;
+  if(axY > 0 && axY < H){ ctx.beginPath(); ctx.moveTo(0,axY); ctx.lineTo(W,axY); ctx.stroke(); }
+  if(axX > 0 && axX < W){ ctx.beginPath(); ctx.moveTo(axX,0); ctx.lineTo(axX,H); ctx.stroke(); }
+  // 刻度标签（跳过零刻度）
+  ctx.fillStyle = 'rgba(148,163,184,0.65)';
+  if(axY > 0 && axY < H){
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for(let v=Math.ceil(R.reMin/sxStep)*sxStep; v<=R.reMax; v+=sxStep){
+      if(Math.abs(v) < sxStep*1e-9) continue;
+      ctx.fillText(fmtTick(v,sxStep), X(v), axY+3);
+    }
+  }
+  if(axX > 0 && axX < W){
+    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for(let v=Math.ceil(R.imMin/syStep)*syStep; v<=R.imMax; v+=syStep){
+      if(Math.abs(v) < syStep*1e-9) continue;
+      ctx.fillText(fmtTick(v,syStep), axX-4, Y(v));
+    }
+  }
+  ctx.fillStyle = 'rgba(226,232,240,0.8)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('Im', W-18, 4);
+  ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+  ctx.fillText('Re', W-4, H-3);
+  // s 点（拖动调节 a、b）
+  const a = state.a, b = state.b;
+  const sx = X(a), sy = Y(b);
+  ctx.setLineDash([3,4]);
+  ctx.strokeStyle = 'rgba(45,212,191,0.35)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(sx,0); ctx.lineTo(sx,H); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,sy); ctx.lineTo(W,sy); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.strokeStyle = 'rgba(45,212,191,0.55)'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(sx,sy,12,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#2dd4bf';
+  ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#0a101d'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(sx,sy,7,0,Math.PI*2); ctx.stroke();
+  ctx.fillStyle = '#0a101d';
+  ctx.beginPath(); ctx.arc(sx,sy,2.5,0,Math.PI*2); ctx.fill();
+  ctx.font = '11px '+getComputedStyle(document.body).getPropertyValue('--mono');
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillStyle = '#2dd4bf';
+  const sg = b >= 0 ? '+' : '−';
+  ctx.fillText('s = ' + a.toFixed(2) + ' ' + sg + ' ' + Math.abs(b).toFixed(2) + 'i', sx+16, sy-8);
+}
+
+/* ---------- 数值面板 ---------- */
+function fmtC(z){
+  const sgn = z.im < 0 ? '−' : '+';
+  return Math.abs(z.re).toFixed(4) + ' ' + sgn + ' ' + Math.abs(z.im).toFixed(4) + 'i';
+}
+function updateNumbers(){
+  const {a,b,T,N,t} = state;
+  const dt = T/N;
+  const riemann = cache.pts[N];
+  const analytic = analyticAt(T);
+  const dRe = riemann.re-analytic.re, dIm = riemann.im-analytic.im;
+  const errAbs = Math.hypot(dRe,dIm);
+  const mag = Math.hypot(analytic.re, analytic.im);
+  const rel = mag > 1e-12 ? errAbs/mag : errAbs;
+  const sBadge = $('sBadge');
+  sBadge.textContent = 's = ' + (a>=0?'':'') + a.toFixed(2) + (b>=0?' + ':' − ') + Math.abs(b).toFixed(2) + 'i';
+  $('numRiemann').textContent = fmtC(riemann);
+  $('numAnalytic').textContent = fmtC(analytic);
+  $('numErr').textContent = errAbs.toExponential(3);
+  $('numRel').textContent = (rel*100).toFixed(4) + '%';
+  $('numDt').textContent = dt.toFixed(4);
+  const cur = posAt(t);
+  $('numCur').textContent = fmtC(cur);
+  const pct = Math.round(t/T*100);
+  $('progFill').style.width = pct + '%';
+  $('progTxt').textContent = 't = ' + t.toFixed(2) + ' / ' + T.toFixed(2);
+}
+
+/* ---------- 参数绑定 ---------- */
+function syncSliders(){
+  $('tSl').value = state.T;
+  $('nSl').value = Math.round(Math.log(state.N/20)/Math.log(100)*100);
+  $('tVal').textContent = state.T.toFixed(2);
+  $('nVal').textContent = state.N;
+  $('sXY').textContent = state.a.toFixed(2) + ', ' + state.b.toFixed(2);
+  drawSPlane();
+}
+function applyParams({a,b,T,N,keepT}){
+  if(a!==undefined) state.a = a;
+  if(b!==undefined) state.b = b;
+  if(T!==undefined) state.T = T;
+  if(N!==undefined) state.N = N;
+  state.t = 0; state.playing = false;
+  computePath();
+  fitView();
+  syncSliders();
+  setPlay(false);
+  refresh();
+}
+function refresh(){
+  drawPlane(); drawComp(); updateNumbers();
+}
+function setPlay(on){
+  state.playing = on;
+  $('playTxt').textContent = on ? '暂停' : '播放累加';
+  $('playIco').innerHTML = on
+    ? '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+}
+
+/* ---------- 事件 ---------- */
+$('tSl').addEventListener('input', e => applyParams({T:+e.target.value}));
+$('nSl').addEventListener('input', e => {
+  const v = +e.target.value;
+  const N = Math.round(20*Math.pow(100, v/100));
+  applyParams({N});
+});
+$('playBtn').addEventListener('click', () => {
+  if(state.playing){ setPlay(false); }
+  else {
+    if(state.t >= state.T - 1e-9) state.t = 0;
+    setPlay(true);
+  }
+});
+$('resetBtn').addEventListener('click', () => { state.t = 0; state.playing = false; setPlay(false); refresh(); });
+/* ---------- s 复平面：拖动 s 点 / Shift+左键平移 / 滚轮缩放 / 双击复位 ---------- */
+(function(){
+  const sp = $('splane');
+  let dragging = false; // 普通拖动：调节 s 点
+  let panning = false;  // Shift+左键：平移视图
+  let pan = null;
+  function getRange(){
+    return {
+      reMin: sView.cx - sView.rx, reMax: sView.cx + sView.rx,
+      imMin: sView.cy - sView.ry, imMax: sView.cy + sView.ry
+    };
+  }
+  function pick(mx, my){
+    const rect = sp.getBoundingClientRect();
+    if(rect.width === 0 || rect.height === 0) return null;
+    const R = getRange();
+    const a = R.reMin + (mx-rect.left)/rect.width*(R.reMax-R.reMin);
+    const b = R.imMax - (my-rect.top)/rect.height*(R.imMax-R.imMin);
+    return { a: Math.min(10, Math.max(-10, a)), b: Math.min(15, Math.max(-15, b)) };
+  }
+  sp.addEventListener('pointerdown', e => {
+    if(e.shiftKey){
+      // Shift+左键：平移视图，与拖动 s 点互斥
+      panning = true;
+      pan = { sx:e.clientX, sy:e.clientY, cx:sView.cx, cy:sView.cy };
+      sp.setPointerCapture(e.pointerId);
+    } else {
+      dragging = true; sp.setPointerCapture(e.pointerId);
+      const p = pick(e.clientX, e.clientY);
+      if(p) applyParams(p);
+    }
+  });
+  sp.addEventListener('pointermove', e => {
+    if(panning){
+      const rect = sp.getBoundingClientRect();
+      if(rect.width > 0 && rect.height > 0){
+        // 鼠标位移换算成世界坐标位移：x 反向、y 同向（y 轴在屏幕朝下）
+        sView.cx = pan.cx - (e.clientX-pan.sx)/rect.width*2*sView.rx;
+        sView.cy = pan.cy + (e.clientY-pan.sy)/rect.height*2*sView.ry;
+        sView.touched = true;
+        drawSPlane();
+      }
+      return;
+    }
+    if(!dragging) return;
+    const p = pick(e.clientX, e.clientY);
+    if(p && (p.a !== state.a || p.b !== state.b)) applyParams(p);
+  });
+  const end = () => { panning = false; dragging = false; };
+  sp.addEventListener('pointerup', end);
+  sp.addEventListener('pointercancel', end);
+  // 滚轮缩放：以鼠标位置为锚点，保持该点对应的世界坐标不变
+  sp.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = sp.getBoundingClientRect();
+    if(rect.width === 0 || rect.height === 0) return;
+    const mxn = (e.clientX - rect.left)/rect.width;
+    const myn = (e.clientY - rect.top)/rect.height;
+    const a = sView.cx + (mxn-0.5)*2*sView.rx;
+    const b = sView.cy - (myn-0.5)*2*sView.ry;
+    const factor = e.deltaY < 0 ? 1/1.18 : 1.18; // 上滚放大、下滚缩小
+    sView.rx = Math.min(Math.max(sView.rx*factor, 0.05), 50);
+    sView.ry = Math.min(Math.max(sView.ry*factor, 0.05), 50);
+    sView.cx = a - (mxn-0.5)*2*sView.rx;
+    sView.cy = b + (myn-0.5)*2*sView.ry;
+    sView.touched = true;
+    drawSPlane();
+  }, {passive:false});
+  sp.addEventListener('dblclick', () => { fitSView(); drawSPlane(); });
+})();
+/* ---------- 画布交互：滚轮缩放 / 拖拽平移 / 双击复位 ---------- */
+(function(){
+  const plane = $('plane');
+  let drag = null;
+  plane.addEventListener('pointerdown', e => {
+    drag = { sx:e.clientX, sy:e.clientY, ox:view.ox, oy:view.oy };
+    plane.setPointerCapture(e.pointerId);
+    plane.classList.add('grabbing');
+  });
+  plane.addEventListener('pointermove', e => {
+    if(!drag) return;
+    view.ox = drag.ox - (e.clientX-drag.sx)/view.zoom;
+    view.oy = drag.oy + (e.clientY-drag.sy)/view.zoom;
+    view.touched = true;
+    drawPlane();
+  });
+  const endDrag = e => { drag = null; plane.classList.remove('grabbing'); };
+  plane.addEventListener('pointerup', endDrag);
+  plane.addEventListener('pointercancel', endDrag);
+  plane.addEventListener('wheel', e => {
+    e.preventDefault();
+    // 缩放只改变放大倍数，不改动图像在坐标系中的位置（ox/oy 不变）
+    const factor = e.deltaY < 0 ? 1.18 : 1/1.18;
+    view.zoom = Math.min(Math.max(view.zoom*factor, 6), 50000);
+    view.touched = true;
+    drawPlane();
+  }, {passive:false});
+  plane.addEventListener('dblclick', () => { fitView(); drawPlane(); });
+  $('fitBtn').addEventListener('click', () => { fitView(); drawPlane(); });
+})();
+document.querySelectorAll('.preset').forEach(btn => {
+  btn.addEventListener('click', () => applyParams({a:+btn.dataset.a, b:+btn.dataset.b, T:+btn.dataset.t}));
+});
+
+/* ---------- 动画循环 ---------- */
+let lastFrame = performance.now();
+function loop(now){
+  const dt = Math.min((now-lastFrame)/1000, 0.05);
+  lastFrame = now;
+  if(state.playing){
+    const speed = state.T/4; // 4 秒完成一轮累加
+    state.t += dt*speed;
+    if(state.t >= state.T){ state.t = state.T; setPlay(false); }
+    drawPlane(); drawComp(); updateNumbers();
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- resize ---------- */
+let rsz = null;
+window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(() => { if(!view.touched) fitView(); refresh(); }, 120); });
+
+/* ---------- init ---------- */
+computePath();
+fitView();
+syncSliders();
+refresh();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

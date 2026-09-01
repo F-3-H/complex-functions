@@ -52,6 +52,9 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
 .card.calc .icon{background:linear-gradient(135deg,#ffb86c 0%,var(--accent2) 100%);box-shadow:0 4px 16px rgba(255,184,108,0.25)}
 .card.calc .tagline{color:#ffb86c}
 .card.calc .open-btn{color:#ffb86c}
+.card.expint .icon{background:linear-gradient(135deg,#2dd4bf 0%,#38bdf8 100%);box-shadow:0 4px 16px rgba(45,212,191,0.25)}
+.card.expint .tagline{color:#2dd4bf}
+.card.expint .open-btn{color:#2dd4bf}
 .card:hover .open-btn{gap:12px}
 .card .open-btn .arrow{font-size:16px}
 .footer{text-align:center;font-size:12px;color:var(--text2);opacity:0.7;line-height:1.8}
@@ -67,11 +70,13 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
     <div class="subtitle">
       <span>双画板映射</span>
       <span class="sep">·</span>
-      <span>积分可视化</span>
+      <span>路径积分</span>
       <span class="sep">·</span>
       <span>矢量运算</span>
       <span class="sep">·</span>
       <span>相位动画</span>
+      <span class="sep">·</span>
+      <span>指数积分</span>
       <span class="sep">·</span>
       <span>交互式探索</span>
     </div>
@@ -107,6 +112,14 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
       <div class="tagline">f(θ) = Σ c·e^(iθ)</div>
       <div class="desc">在 θ 轴上点两点构成线段，θ 自动缓慢移动；右侧复平面中每个 e^(...) 项对应一个首尾相接的旋转矢量，端点轨迹即函数图像。支持衰变系数（对数螺旋）与随模长变化的虚线圆。</div>
       <div class="features"><span>旋转矢量首尾相接</span><span>衰变螺旋</span><span>θ 动画播放</span><span>循环模式</span><span>触屏缩放</span></div>
+      <div class="open-btn">打开工具<span class="arrow">→</span></div>
+    </a>
+    <a class="card expint" href="./integral-exp/index.html">
+      <div class="icon">∫</div>
+      <h2>积分可视化计算器</h2>
+      <div class="tagline">∫ e^(st) dt</div>
+      <div class="desc">把「微小量累加」画在复平面：每个实数微元 dt 被 e^(st) 拉伸旋转成一个向量，首尾相加即得积分。调节 s=a+bi 可得圆弧、增长/衰减螺旋、指数膨胀等形态。</div>
+      <div class="features"><span>e^(st) 矢量累加</span><span>s=a+bi 参数</span><span>螺旋预设</span><span>动画播放</span><span>触屏缩放</span></div>
       <div class="open-btn">打开工具<span class="arrow">→</span></div>
     </a>
   </div>
@@ -283,6 +296,15 @@ mkdirSync(calcDest, { recursive: true });
 copyFileSync(join(PROJECT, 'complex-calculator', 'index.html'), join(calcDest, 'index.html'));
 if (existsSync(join(PROJECT, 'complex-calculator', 'README.md'))) {
   copyFileSync(join(PROJECT, 'complex-calculator', 'README.md'), join(calcDest, 'README.md'));
+}
+
+// 3d. 复制 integral-exp/ 子项目
+log('copying integral-exp/ ...');
+const expDest = join(DIST, 'integral-exp');
+mkdirSync(expDest, { recursive: true });
+copyFileSync(join(PROJECT, 'integral-exp', 'index.html'), join(expDest, 'index.html'));
+if (existsSync(join(PROJECT, 'integral-exp', 'README.md'))) {
+  copyFileSync(join(PROJECT, 'integral-exp', 'README.md'), join(expDest, 'README.md'));
 }
 
 // 4. 写启动页
