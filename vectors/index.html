@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>复平面矢量图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#1a1a2e;--panel:#16213e;--accent:#00d4ff;--text:#e0e0e0;--dim:#8899aa;--border:#2a2a4a;--err:#ff6b6b;--ok:#50fa7b;--accent2:#ffd93d}
+body{font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
+#sidebar{width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#sidebar h1{font-size:16px;padding:12px 14px 2px;color:var(--accent)}
+#sidebar .sub{font-size:11px;color:var(--dim);padding:0 14px 10px;border-bottom:1px solid var(--border)}
+.list-wrap{flex:1;overflow-y:auto;padding:8px 14px}
+.point-item{display:flex;align-items:center;gap:5px;padding:5px 7px;margin:3px 0;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.02);font-size:12px;font-family:Consolas,'Courier New',monospace;transition:border-color .15s}
+.point-item:hover{border-color:var(--accent)}
+.point-item .color-pick{width:16px;height:16px;border:1px solid var(--border);border-radius:50%;cursor:pointer;padding:0;overflow:hidden;flex-shrink:0}
+.point-item .color-pick::-webkit-color-swatch-wrapper{padding:0}
+.point-item .color-pick::-webkit-color-swatch{border:none;border-radius:50%}
+.point-item .label{flex:1;color:var(--accent);cursor:pointer;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.point-item .label:hover{text-decoration:underline}
+.point-item .coords{color:var(--dim);white-space:nowrap;font-size:10px}
+.point-item .detail{font-size:10px;color:var(--dim);padding:4px 0 0 21px;line-height:1.6;border-top:1px solid var(--border);margin-top:4px}
+.point-item .detail b{color:var(--accent);font-weight:normal}
+.point-item .del{background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:0 2px;line-height:1}
+.point-item .del:hover{color:var(--err)}
+.point-item .chain-badge{font-size:9px;color:var(--accent2);background:rgba(255,217,61,.12);border:1px solid rgba(255,217,61,.3);border-radius:3px;padding:0 3px;white-space:nowrap}
+.add-section{padding:10px 14px;border-top:1px solid var(--border);background:var(--panel)}
+.add-section .row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.add-section label{font-size:11px;color:var(--dim);white-space:nowrap}
+.add-section input[type=text],.add-section input[type=number]{flex:1;background:#0d1117;border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:Consolas,'Courier New',monospace;font-size:12px;padding:4px 6px;outline:none;min-width:0}
+.add-section input:focus{border-color:var(--accent)}
+.add-section input.bad{border-color:var(--err)}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.btn{padding:4px 10px;background:#0d1117;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+.btn.primary:hover{filter:brightness(1.1)}
+.btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn.danger{border-color:var(--err)}
+.btn.danger:hover{color:var(--err)}
+.opts{padding:8px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--dim);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.opts label{display:flex;align-items:center;gap:4px;cursor:pointer}
+.opts input[type=checkbox]{accent-color:var(--accent)}
+#canvas-wrap{flex:1;position:relative;overflow:hidden}
+canvas{display:block;width:100%;height:100%}
+#readout{position:absolute;top:10px;right:12px;background:rgba(22,33,62,.88);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-family:Consolas,'Courier New',monospace;font-size:11.5px;line-height:1.7;pointer-events:none;min-width:200px;z-index:5}
+#readout b{color:var(--accent)}
+#hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:11px;pointer-events:none;background:rgba(22,33,62,.7);padding:4px 12px;border-radius:6px;z-index:5}
+#drawCanvas{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+#drawCanvas.active{pointer-events:auto;cursor:crosshair}
+#drawToolbar{position:absolute;top:10px;left:12px;background:rgba(22,33,62,.92);backdrop-filter:blur(6px);border:1px solid var(--border);border-radius:8px;padding:6px 10px;display:none;align-items:center;gap:6px;z-index:15;font-size:11px;color:var(--dim);flex-wrap:wrap}
+#drawToolbar.show{display:flex}
+#drawToolbar label{display:flex;align-items:center;gap:3px;cursor:pointer;white-space:nowrap}
+#drawToolbar input[type=color]{width:22px;height:20px;border:1px solid var(--border);border-radius:4px;background:none;padding:1px;cursor:pointer}
+#drawToolbar input[type=range]{width:50px;accent-color:var(--accent)}
+#drawToolbar .sep{width:1px;height:18px;background:var(--border)}
+.tool-btn{padding:3px 7px;background:#0d1117;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:11px;cursor:pointer;white-space:nowrap}
+.tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tool-btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.calc-section{padding:10px 14px;border-top:1px solid var(--border);background:var(--panel)}
+.calc-section h2{font-size:12px;color:var(--accent);margin-bottom:8px;font-weight:600}
+.calc-row{display:flex;gap:4px;align-items:center;margin-bottom:5px}
+.calc-row label{font-size:11px;color:var(--dim);min-width:22px;font-family:Consolas,'Courier New',monospace}
+.calc-row input{width:0;flex:1;background:#0d1117;border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:Consolas,'Courier New',monospace;font-size:12px;padding:4px 5px;outline:none;min-width:0}
+.calc-row input:focus{border-color:var(--accent)}
+.calc-row span{color:var(--dim);font-size:11px}
+.calc-btns{display:flex;gap:4px;margin:6px 0;flex-wrap:wrap}
+.calc-btns .btn{flex:1;text-align:center;min-width:0}
+.calc-result{font-family:Consolas,'Courier New',monospace;font-size:12px;background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-top:4px;line-height:1.6;color:var(--accent2);min-height:24px;word-break:break-all}
+.calc-result .op{color:var(--dim);font-size:10px}
+.calc-result .eq{color:var(--ok);font-weight:bold}
+</style>
+</head>
+<body>
+<div id="sidebar">
+  <h1>复平面矢量图</h1>
+  <div class="sub">拖拽矢量移动 · 将头部拖到另一尾部首尾相接 · Ctrl+Z 撤销</div>
+  <div class="list-wrap" id="pointList"></div>
+  <div class="add-section">
+    <div class="row">
+      <label>z =</label>
+      <input type="text" id="reInput" placeholder="Re" style="max-width:90px">
+      <span style="color:var(--dim)">+</span>
+      <input type="text" id="imInput" placeholder="Im" style="max-width:90px">
+      <span style="color:var(--dim)">i</span>
+    </div>
+    <div class="row">
+      <label>标签</label>
+      <input type="text" id="labelInput" placeholder="如 z₁" style="max-width:100px">
+      <label>颜色</label>
+      <input type="color" id="colorInput" value="#00d4ff" style="width:28px;height:22px;border:1px solid var(--border);border-radius:4px;background:none;padding:1px;cursor:pointer">
+    </div>
+    <div class="btns">
+      <button class="btn primary" id="btnAdd">添加</button>
+      <button class="btn" id="btnPreset1">单位根</button>
+      <button class="btn" id="btnPresetAdd">矢量加法</button>
+      <button class="btn" id="btnUndo">↩ 撤销</button>
+      <button class="btn danger" id="btnClearAll">清空</button>
+    </div>
+  </div>
+  <div class="calc-section">
+    <h2>复数计算器</h2>
+    <div class="calc-row">
+      <label>z₁</label>
+      <input id="calcRe1" placeholder="Re" value="3">
+      <span>+</span>
+      <input id="calcIm1" placeholder="Im" value="2">
+      <span>i</span>
+    </div>
+    <div class="calc-row">
+      <label>z₂</label>
+      <input id="calcRe2" placeholder="Re" value="1">
+      <span>+</span>
+      <input id="calcIm2" placeholder="Im" value="-4">
+      <span>i</span>
+    </div>
+    <div class="calc-btns">
+      <button class="btn" onclick="window._calcOp('+')">z₁ + z₂</button>
+      <button class="btn" onclick="window._calcOp('-')">z₁ − z₂</button>
+      <button class="btn" onclick="window._calcOp('*')">z₁ × z₂</button>
+      <button class="btn" onclick="window._calcOp('/')">z₁ ÷ z₂</button>
+    </div>
+    <div class="calc-result" id="calcResult">输入两个复数，选择运算</div>
+    <div class="calc-btns" style="margin-top:6px">
+      <button class="btn" onclick="window._calcAddResult()">将结果加入画布</button>
+    </div>
+  </div>
+  <div class="opts">
+    <button class="btn" id="btnToggleDraw">画笔</button>
+    <label><input type="checkbox" id="chkArrow" checked> 矢量</label>
+    <label><input type="checkbox" id="chkLabel" checked> 标签</label>
+    <label><input type="checkbox" id="chkCoord" checked> 坐标</label>
+    <label><input type="checkbox" id="chkGrid" checked> 网格</label>
+  </div>
+</div>
+<div id="canvas-wrap">
+  <canvas id="cv"></canvas>
+  <canvas id="drawCanvas"></canvas>
+  <div id="drawToolbar">
+    <button class="tool-btn active" data-dtool="pen">✏ 画笔</button>
+    <button class="tool-btn" data-dtool="line">╱ 直线</button>
+    <button class="tool-btn" data-dtool="rect">▭ 矩形</button>
+    <button class="tool-btn" data-dtool="circle">○ 圆形</button>
+    <button class="tool-btn" data-dtool="eraser">⌫ 橡皮</button>
+    <div class="sep"></div>
+    <input type="color" id="drawColor" value="#00d4ff">
+    <label>粗细</label>
+    <input type="range" id="drawSize" min="1" max="20" value="3">
+    <div class="sep"></div>
+    <button class="tool-btn" id="btnDrawUndo">↩</button>
+    <button class="tool-btn" id="btnDrawClear" style="border-color:var(--err)">✕</button>
+    <div class="sep"></div>
+    <button class="tool-btn" id="btnDrawExit">退出</button>
+  </div>
+  <div id="readout"></div>
+  <div id="hint">滚轮缩放 · 右键拖拽平移 · 双击添加点 · 拖拽矢量移动 · Ctrl+Z 撤销</div>
+</div>
+<script>
+(function(){
+'use strict';
+var COLORS=['#00d4ff','#ff6b9d','#50fa7b','#ffb86c','#bd93f9','#ff79c6','#8be9fd','#f1fa8c','#ff5555','#ff9e64','#6272a4','#d6acff'];
+var colorIdx=0;
+var points=[];
+var undoStack=[];
+var cv=document.getElementById('cv');
+var ctx=cv.getContext('2d');
+var dpr=window.devicePixelRatio||1;
+var viewW,viewH;
+var cx=0,cy=0,scale=80;
+var isPanning=false,panLast={x:0,y:0};
+var readoutEl=document.getElementById('readout');
+var SNAP_DIST=20;
+
+function saveUndo(){undoStack.push(JSON.parse(JSON.stringify(points)));if(undoStack.length>80)undoStack.shift();}
+function undo(){if(undoStack.length===0)return;points=undoStack.pop();colorIdx=points.length;selectedPoint=-1;renderList();render();}
+
+function resize(){
+  var rect=cv.parentElement.getBoundingClientRect();
+  viewW=rect.width;viewH=rect.height;
+  cv.width=viewW*dpr;cv.height=viewH*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  resizeDrawCanvas();render();
+}
+function toScreen(x,y){return[(x-cx)*scale+viewW/2,(cy-y)*scale+viewH/2];}
+function toWorld(px,py){return[(px-viewW/2)/scale+cx,cy-(py-viewH/2)/scale];}
+function fmtNum(v){return Number(v.toPrecision(4));}
+function fmtComplex(re,im){
+  var ar=Math.abs(re),ai=Math.abs(im),eps=1e-9*Math.max(1,ar,ai);
+  if(ai<=eps)return fmtNum(re).toString();
+  if(ar<=eps)return fmtNum(im)+'i';
+  return fmtNum(re)+(im>=0?' + ':' − ')+fmtNum(ai)+'i';
+}
+function screenDist(a,b){var dx=a[0]-b[0],dy=a[1]-b[1];return Math.sqrt(dx*dx+dy*dy);}
+
+function getTail(p){
+  if(p.oi!==undefined&&p.oi!==null&&p.oi>=0&&p.oi<points.length&&p.oi!==points.indexOf(p)){
+    var op=points[p.oi];
+    return[op.re+op.ox, op.im+op.oy];
+  }
+  return[p.ox||0,p.oy||0];
+}
+function getTip(p){return[p.re+p.ox, p.im+p.oy];}
+
+function drawGrid(){
+  var s=scale;
+  var rangeX=[cx-viewW/(2*s),cx+viewW/(2*s)];
+  var rangeY=[cy-viewH/(2*s),cy+viewH/(2*s)];
+  var rawStep=60/s;
+  var mag=Math.pow(10,Math.floor(Math.log10(rawStep)));
+  var res=rawStep/mag;
+  var step=res<2?mag:res<5?2*mag:5*mag;
+  var minorStep=step/5;
+  ctx.save();
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
+  var x0=Math.floor(rangeX[0]/minorStep)*minorStep,y0=Math.floor(rangeY[0]/minorStep)*minorStep;
+  ctx.beginPath();
+  for(var x=x0;x<=rangeX[1];x+=minorStep){var sx=(x-cx)*s+viewW/2;ctx.moveTo(sx,0);ctx.lineTo(sx,viewH);}
+  for(var y=y0;y<=rangeY[1];y+=minorStep){var sy=(cy-y)*s+viewH/2;ctx.moveTo(0,sy);ctx.lineTo(viewW,sy);}
+  ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.08)';
+  x0=Math.floor(rangeX[0]/step)*step;y0=Math.floor(rangeY[0]/step)*step;
+  ctx.beginPath();
+  for(var x=x0;x<=rangeX[1];x+=step){var sx=(x-cx)*s+viewW/2;ctx.moveTo(sx,0);ctx.lineTo(sx,viewH);}
+  for(var y=y0;y<=rangeY[1];y+=step){var sy=(cy-y)*s+viewH/2;ctx.moveTo(0,sy);ctx.lineTo(viewW,sy);}
+  ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;
+  var ox=(0-cx)*s+viewW/2,oy=(cy-0)*s+viewH/2;
+  ctx.beginPath();ctx.moveTo(ox,0);ctx.lineTo(ox,viewH);ctx.moveTo(0,oy);ctx.lineTo(viewW,oy);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='10px sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='top';
+  for(var x=Math.floor(rangeX[0]/step)*step;x<=rangeX[1];x+=step){
+    if(Math.abs(x)<step*0.01)continue;ctx.fillText(fmtNum(x),(x-cx)*s+viewW/2,oy+3);
+  }
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(var y=Math.floor(rangeY[0]/step)*step;y<=rangeY[1];y+=step){
+    if(Math.abs(y)<step*0.01)continue;ctx.fillText(fmtNum(y)+'i',ox-4,(cy-y)*s+viewH/2);
+  }
+  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillText('Re',viewW-22,oy+4);ctx.textBaseline='bottom';ctx.fillText('Im',ox+4,10);
+  ctx.restore();
+}
+
+function drawArrow(x1,y1,x2,y2,color,width){
+  var dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+  if(len<1)return;
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width||2;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  var angle=Math.atan2(dy,dx),hl=Math.min(12,len*0.25);
+  ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hl*Math.cos(angle-0.35),y2-hl*Math.sin(angle-0.35));
+  ctx.lineTo(x2-hl*Math.cos(angle+0.35),y2-hl*Math.sin(angle+0.35));
+  ctx.closePath();ctx.fill();ctx.restore();
+}
+
+function render(){
+  ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if(document.getElementById('chkGrid').checked)drawGrid();
+  var showArrow=document.getElementById('chkArrow').checked;
+  var showLabel=document.getElementById('chkLabel').checked;
+  var showCoord=document.getElementById('chkCoord').checked;
+  var s0=toScreen(0,0);
+  ctx.fillStyle='#00ff88';ctx.beginPath();ctx.arc(s0[0],s0[1],3.5,0,Math.PI*2);ctx.fill();
+  for(var i=0;i<points.length;i++){
+    if(dragState.active&&dragState.idx===i)continue;
+    var p=points[i];
+    var tail=getTail(p),tip=getTip(p);
+    var st=toScreen(tail[0],tail[1]),sp=toScreen(tip[0],tip[1]);
+    if(showArrow)drawArrow(st[0],st[1],sp[0],sp[1],p.color,2);
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(sp[0],sp[1],5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sp[0],sp[1],2,0,Math.PI*2);ctx.fill();
+    if(showLabel&&p.label){
+      ctx.save();ctx.fillStyle=p.color;ctx.font='bold 12px Consolas,"Courier New",monospace';
+      ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(p.label,sp[0]+8,sp[1]-6);ctx.restore();
+    }
+    if(showCoord){
+      ctx.save();ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='10px Consolas,"Courier New",monospace';
+      ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('('+fmtComplex(p.re,p.im)+')',sp[0]+8,sp[1]+4);ctx.restore();
+    }
+  }
+  if(dragState.active){
+    var dp=points[dragState.idx];
+    var dt=getTail(dp),tt=getTip(dp);
+    var sdt=toScreen(dt[0],dt[1]),stt=toScreen(tt[0],tt[1]);
+    drawArrow(sdt[0],sdt[1],stt[0],stt[1],dp.color,3);
+    ctx.fillStyle=dp.color;ctx.beginPath();ctx.arc(stt[0],stt[1],7,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(stt[0],stt[1],3,0,Math.PI*2);ctx.fill();
+    if(showLabel&&dp.label){
+      ctx.save();ctx.fillStyle=dp.color;ctx.font='bold 13px Consolas,"Courier New",monospace';
+      ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(dp.label,stt[0]+10,stt[1]-8);ctx.restore();
+    }
+    if(dragState.snapped){
+      var sp=toScreen(dragState.snapTip[0],dragState.snapTip[1]);
+      ctx.save();ctx.strokeStyle='#ffd93d';ctx.lineWidth=2;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(sp[0],sp[1],SNAP_DIST,0,Math.PI*2);ctx.stroke();ctx.restore();
+      ctx.fillStyle='#ffd93d';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.textBaseline='top';
+      ctx.fillText('吸附',sp[0],sp[1]+SNAP_DIST+4);
+    }
+  }
+  updateReadout();
+}
+
+function updateReadout(){
+  if(points.length===0){readoutEl.innerHTML='<span style="color:var(--dim)">无数据</span>';return;}
+  var html='';
+  for(var i=0;i<points.length;i++){
+    var p=points[i];
+    var m=Math.sqrt(p.re*p.re+p.im*p.im);
+    var a=Math.atan2(p.im,p.re)*180/Math.PI;
+    var tailInfo='';
+    if(p.oi!==undefined&&p.oi!==null&&p.oi>=0&&p.oi<points.length&&p.oi!==i){
+      tailInfo=' <span style="color:var(--accent2)">← '+(points[p.oi].label||('z'+(p.oi+1)))+'</span>';
+    }
+    html+='<span style="color:'+p.color+'">'+(p.label||('z'+(i+1)))+'</span> = '+fmtComplex(p.re,p.im)
+      +'　<span style="color:var(--dim)">|z|='+fmtNum(m)+' ∠'+fmtNum(a)+'°</span>'+tailInfo+'<br>';
+  }
+  readoutEl.innerHTML=html;
+}
+
+function addPoint(re,im,label,color,oi){
+  if(!color){color=COLORS[colorIdx%COLORS.length];colorIdx++;}
+  points.push({re:re,im:im,label:label||'',color:color,ox:0,oy:0,oi:(oi!==undefined?oi:null)});
+  renderList();render();
+}
+function removePoint(i){
+  saveUndo();
+  for(var j=0;j<points.length;j++){
+    if(points[j].oi===i)points[j].oi=null;
+    else if(points[j].oi!==null&&points[j].oi!==undefined&&points[j].oi>i)points[j].oi--;
+  }
+  points.splice(i,1);
+  if(selectedPoint===i)selectedPoint=-1;
+  else if(selectedPoint>i)selectedPoint--;
+  renderList();render();
+}
+var selectedPoint=-1;
+
+function renderList(){
+  var el=document.getElementById('pointList');
+  var html='';
+  for(var i=0;i<points.length;i++){
+    var p=points[i];
+    var chain='';
+    if(p.oi!==undefined&&p.oi!==null&&p.oi>=0&&p.oi<points.length&&p.oi!==i){
+      chain='<span class="chain-badge">← '+(points[p.oi].label||('z'+(p.oi+1)))+'</span>';
+    }
+    var m=Math.sqrt(p.re*p.re+p.im*p.im);
+    var a=Math.atan2(p.im,p.re)*180/Math.PI;
+    var detail='';
+    if(selectedPoint===i){
+      detail='<div class="detail">'
+        +'<b>z</b> = '+fmtComplex(p.re,p.im)+'<br>'
+        +'<b>|z|</b> = '+fmtNum(m)+'<br>'
+        +'<b>arg(z)</b> = '+fmtNum(a)+'°<br>'
+        +'<b>Re</b> = '+fmtNum(p.re)+'　<b>Im</b> = '+fmtNum(p.im)
+        +(p.oi!==null&&p.oi!==undefined&&p.oi>=0&&p.oi<points.length?'<br><b>首尾相接 ←</b> '+(points[p.oi].label||('z'+(p.oi+1))):'')
+        +'</div>';
+    }
+    html+='<div class="point-item" style="'+(selectedPoint===i?'border-color:var(--accent)':'')+'">'
+      +'<input type="color" class="color-pick" value="'+p.color+'" onchange="window._changeColor('+i+',this.value)">'
+      +'<span class="label" onclick="window._selectPoint('+i+')">'+(p.label||('z'+(i+1)))+'</span>'
+      +chain
+      +'<span class="coords">'+fmtComplex(p.re,p.im)+'</span>'
+      +'<button class="del" onclick="window._removePoint('+i+')" title="删除">×</button>'
+      +detail
+      +'</div>';
+  }
+  el.innerHTML=html;
+}
+window._removePoint=function(i){removePoint(i);};
+window._changeColor=function(i,c){points[i].color=c;renderList();render();};
+window._selectPoint=function(i){
+  selectedPoint=selectedPoint===i?-1:i;
+  renderList();
+};
+
+function fitView(){
+  if(points.length===0){cx=0;cy=0;scale=80;return;}
+  var minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(var i=0;i<points.length;i++){
+    var tail=getTail(points[i]),tip=getTip(points[i]);
+    if(tail[0]<minX)minX=tail[0];if(tail[0]>maxX)maxX=tail[0];
+    if(tail[1]<minY)minY=tail[1];if(tail[1]>maxY)maxY=tail[1];
+    if(tip[0]<minX)minX=tip[0];if(tip[0]>maxX)maxX=tip[0];
+    if(tip[1]<minY)minY=tip[1];if(tip[1]>maxY)maxY=tip[1];
+  }
+  var pad=0.3,rangeX=maxX-minX,rangeY=maxY-minY;
+  if(rangeX<0.01){rangeX=2;minX=-1;}if(rangeY<0.01){rangeY=2;minY=-1;}
+  cx=(minX+maxX)/2;cy=(minY+maxY)/2;
+  scale=Math.min(viewW/(rangeX+pad*2),viewH/(rangeY+pad*2));
+}
+
+function hitTestVector(mx,my){
+  for(var i=points.length-1;i>=0;i--){
+    var p=points[i];
+    var tip=getTip(p),tail=getTail(p);
+    var spt=toScreen(tip[0],tip[1]),stl=toScreen(tail[0],tail[1]);
+    if(screenDist([mx,my],spt)<14)return{i,part:'tip'};
+    var dx=spt[0]-stl[0],dy=spt[1]-stl[1],len=Math.sqrt(dx*dx+dy*dy);
+    if(len<1)continue;
+    var t=Math.max(0,Math.min(1,((mx-stl[0])*dx+(my-stl[1])*dy)/(len*len)));
+    var px=stl[0]+t*dx,py=stl[1]+t*dy;
+    if(screenDist([mx,my],[px,py])<10)return{i,part:'body'};
+  }
+  return null;
+}
+
+var dragState={active:false,idx:-1,startMouse:[0,0],startOx:0,startOy:0,snapped:false,snapTip:null,snapIdx:-1};
+
+function setupEvents(){
+  cv.addEventListener('contextmenu',function(e){e.preventDefault();});
+  cv.addEventListener('dblclick',function(e){
+    if(drawMode)return;
+    var rect=cv.getBoundingClientRect();
+    var w=toWorld(e.clientX-rect.left,e.clientY-rect.top);
+    addPoint(Math.round(w[0]*1000)/1000,Math.round(w[1]*1000)/1000);
+  });
+  cv.addEventListener('mousedown',function(e){
+    if(drawMode)return;
+    if(e.button===2||(e.button===0&&e.shiftKey)){
+      isPanning=true;panLast={x:e.clientX,y:e.clientY};cv.style.cursor='grabbing';e.preventDefault();return;
+    }
+    if(e.button===0){
+      var rect=cv.getBoundingClientRect();
+      var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      var hit=hitTestVector(mx,my);
+      if(hit){
+        saveUndo();
+        var p=points[hit.i];
+        dragState.active=true;dragState.idx=hit.i;
+        dragState.startMouse=[mx,my];
+        dragState.startOx=p.ox||0;dragState.startOy=p.oy||0;
+        dragState.snapped=false;dragState.snapTip=null;
+        cv.style.cursor='grabbing';e.preventDefault();
+      }
+    }
+  });
+  window.addEventListener('mousemove',function(e){
+    if(isPanning){
+      cx-=(e.clientX-panLast.x)/scale;cy+=(e.clientY-panLast.y)/scale;
+      panLast={x:e.clientX,y:e.clientY};render();return;
+    }
+    if(dragState.active){
+      var rect=cv.getBoundingClientRect();
+      var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+      var dx=(mx-dragState.startMouse[0])/scale;
+      var dy=-(my-dragState.startMouse[1])/scale;
+      var p=points[dragState.idx];
+      p.ox=Math.round((dragState.startOx+dx)*1000)/1000;
+      p.oy=Math.round((dragState.startOy+dy)*1000)/1000;
+      dragState.snapped=false;dragState.snapTip=null;dragState.snapIdx=-1;
+      var tip=getTip(p);
+      for(var i=0;i<points.length;i++){
+        if(i===dragState.idx)continue;
+        var otherTip=getTip(points[i]);
+        var sp=toScreen(otherTip[0],otherTip[1]);
+        var tp=toScreen(tip[0],tip[1]);
+        if(screenDist(tp,sp)<SNAP_DIST){
+          var offx=otherTip[0]-tip[0],offy=otherTip[1]-tip[1];
+          p.ox=Math.round((p.ox+offx)*1000)/1000;
+          p.oy=Math.round((p.oy+offy)*1000)/1000;
+          dragState.snapped=true;dragState.snapTip=otherTip;dragState.snapIdx=i;
+          break;
+        }
+      }
+      render();
+    }
+  });
+  window.addEventListener('mouseup',function(){
+    if(isPanning){isPanning=false;cv.style.cursor='crosshair';}
+    if(dragState.active){
+      if(dragState.snapped&&dragState.snapIdx>=0){
+        points[dragState.idx].oi=dragState.snapIdx;
+      }
+      dragState.active=false;dragState.idx=-1;dragState.snapIdx=-1;
+      cv.style.cursor='crosshair';render();
+    }
+  });
+  cv.addEventListener('wheel',function(e){
+    if(drawMode)return;e.preventDefault();
+    var rect=cv.getBoundingClientRect();
+    var px=e.clientX-rect.left,py=e.clientY-rect.top;
+    var wb=toWorld(px,py);
+    scale*=e.deltaY>0?0.9:1.1;
+    scale=Math.max(0.5,Math.min(5000,scale));
+    var sa=toScreen(wb[0],wb[1]);
+    cx-=(sa[0]-px)/scale;cy+=(sa[1]-py)/scale;
+    render();
+  },{passive:false});
+  window.addEventListener('resize',resize);
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undo();}
+  });
+}
+
+document.getElementById('btnAdd').addEventListener('click',function(){
+  var reStr=document.getElementById('reInput').value.trim()||'0';
+  var imStr=document.getElementById('imInput').value.trim()||'0';
+  var label=document.getElementById('labelInput').value.trim();
+  var color=document.getElementById('colorInput').value;
+  var re=parseFloat(reStr),im=parseFloat(imStr);
+  if(isNaN(re)||isNaN(im)){
+    document.getElementById('reInput').classList.toggle('bad',isNaN(re));
+    document.getElementById('imInput').classList.toggle('bad',isNaN(im));return;
+  }
+  document.getElementById('reInput').classList.remove('bad');
+  document.getElementById('imInput').classList.remove('bad');
+  addPoint(re,im,label,color);
+  document.getElementById('reInput').value='';document.getElementById('imInput').value='';
+  document.getElementById('labelInput').value='';document.getElementById('reInput').focus();
+});
+document.getElementById('reInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('imInput').focus();});
+document.getElementById('imInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('labelInput').focus();});
+document.getElementById('labelInput').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('btnAdd').click();});
+
+document.getElementById('btnPreset1').addEventListener('click',function(){
+  saveUndo();points=[];colorIdx=0;
+  for(var k=0;k<6;k++){var a=2*Math.PI*k/6;addPoint(Math.round(Math.cos(a)*1000)/1000,Math.round(Math.sin(a)*1000)/1000,'ω'+k);}
+  fitView();render();
+});
+document.getElementById('btnPresetAdd').addEventListener('click',function(){
+  saveUndo();points=[];colorIdx=0;
+  var p1={re:3,im:2,label:'z₁',color:COLORS[0],ox:0,oy:0,oi:null};
+  var p2={re:1,im:-3,label:'z₂',color:COLORS[1],ox:0,oy:0,oi:null};
+  points.push(p1,p2);
+  var t1=getTip(p1);
+  var p3={re:p2.re,im:p2.im,label:'z₁+z₂',color:COLORS[2],ox:Math.round((t1[0]-p2.re)*1000)/1000,oy:Math.round((t1[1]-p2.im)*1000)/1000,oi:0};
+  points.push(p3);colorIdx=3;
+  fitView();renderList();render();
+});
+document.getElementById('btnUndo').addEventListener('click',undo);
+document.getElementById('btnClearAll').addEventListener('click',function(){
+  saveUndo();points=[];colorIdx=0;selectedPoint=-1;renderList();render();
+});
+['chkArrow','chkLabel','chkCoord','chkGrid'].forEach(function(id){
+  document.getElementById(id).addEventListener('change',render);
+});
+
+// ===== 画布涂鸦 =====
+var drawCv=document.getElementById('drawCanvas');
+var drawCtx=drawCv.getContext('2d');
+var drawDpr=window.devicePixelRatio||1;
+var drawMode=false,drawTool='pen',drawing=false,drawStrokes=[],curShape=null;
+
+function resizeDrawCanvas(){
+  var r=drawCv.parentElement.getBoundingClientRect();
+  drawCv.width=r.width*drawDpr;drawCv.height=r.height*drawDpr;
+  drawCv.style.width=r.width+'px';drawCv.style.height=r.height+'px';redrawStrokes();
+}
+function redrawStrokes(){
+  drawCtx.setTransform(1,0,0,1,0,0);drawCtx.clearRect(0,0,drawCv.width,drawCv.height);
+  drawCtx.setTransform(drawDpr,0,0,drawDpr,0,0);
+  for(var i=0;i<drawStrokes.length;i++)drawShape(drawStrokes[i]);
+}
+function drawShape(s){
+  drawCtx.save();
+  if(s.tool==='eraser'){drawCtx.globalCompositeOperation='destination-out';drawCtx.strokeStyle='rgba(0,0,0,1)';}
+  else drawCtx.strokeStyle=s.color;
+  drawCtx.lineWidth=s.size;drawCtx.lineCap='round';drawCtx.lineJoin='round';
+  if(s.tool==='pen'){
+    if(s.pts.length<2){drawCtx.restore();return;}
+    drawCtx.beginPath();drawCtx.moveTo(s.pts[0].x,s.pts[0].y);
+    for(var i=1;i<s.pts.length;i++){var p0=s.pts[i-1],p1=s.pts[i];drawCtx.quadraticCurveTo(p0.x,p0.y,(p0.x+p1.x)/2,(p0.y+p1.y)/2);}
+    drawCtx.stroke();
+  }else if(s.tool==='line'){
+    drawCtx.beginPath();drawCtx.moveTo(s.pts[0].x,s.pts[0].y);drawCtx.lineTo(s.pts[1].x,s.pts[1].y);drawCtx.stroke();
+  }else if(s.tool==='rect'){
+    var x=Math.min(s.pts[0].x,s.pts[1].x),y=Math.min(s.pts[0].y,s.pts[1].y);
+    drawCtx.strokeRect(x,y,Math.abs(s.pts[1].x-s.pts[0].x),Math.abs(s.pts[1].y-s.pts[0].y));
+  }else if(s.tool==='circle'){
+    var cx2=(s.pts[0].x+s.pts[1].x)/2,cy2=(s.pts[0].y+s.pts[1].y)/2;
+    drawCtx.beginPath();drawCtx.ellipse(cx2,cy2,Math.abs(s.pts[1].x-s.pts[0].x)/2,Math.abs(s.pts[1].y-s.pts[0].y)/2,0,0,Math.PI*2);drawCtx.stroke();
+  }
+  drawCtx.restore();
+}
+function setDrawMode(on){
+  drawMode=on;
+  if(on){drawCv.classList.add('active');document.getElementById('drawToolbar').classList.add('show');}
+  else{drawing=false;curShape=null;drawCv.classList.remove('active');document.getElementById('drawToolbar').classList.remove('show');}
+}
+document.getElementById('btnToggleDraw').addEventListener('click',function(){
+  setDrawMode(!drawMode);this.textContent=drawMode?'退出画笔':'画笔';this.classList.toggle('active',drawMode);
+});
+document.getElementById('btnDrawExit').addEventListener('click',function(){
+  setDrawMode(false);var b=document.getElementById('btnToggleDraw');b.textContent='画笔';b.classList.remove('active');
+});
+document.getElementById('btnDrawUndo').addEventListener('click',function(){drawStrokes.pop();redrawStrokes();});
+document.getElementById('btnDrawClear').addEventListener('click',function(){drawStrokes=[];redrawStrokes();});
+
+var dtoolBtns=document.querySelectorAll('#drawToolbar .tool-btn[data-dtool]');
+for(var i=0;i<dtoolBtns.length;i++){
+  dtoolBtns[i].addEventListener('click',function(){
+    for(var j=0;j<dtoolBtns.length;j++)dtoolBtns[j].classList.remove('active');
+    this.classList.add('active');drawTool=this.getAttribute('data-dtool');
+    drawCv.style.cursor=drawTool==='eraser'?'cell':'crosshair';
+  });
+}
+drawCv.addEventListener('mousedown',function(e){
+  if(!drawMode||e.button!==0)return;e.preventDefault();e.stopPropagation();drawing=true;
+  var r=drawCv.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top};
+  curShape={tool:drawTool,color:document.getElementById('drawColor').value,size:parseInt(document.getElementById('drawSize').value),pts:[pt]};
+  if(drawTool==='eraser'){
+    drawCtx.save();drawCtx.globalCompositeOperation='destination-out';drawCtx.fillStyle='rgba(0,0,0,1)';
+    drawCtx.beginPath();drawCtx.arc(pt.x,pt.y,curShape.size,0,Math.PI*2);drawCtx.fill();drawCtx.restore();
+  }
+});
+drawCv.addEventListener('mousemove',function(e){
+  if(!drawing||!curShape)return;e.preventDefault();
+  var r=drawCv.getBoundingClientRect(),pt={x:e.clientX-r.left,y:e.clientY-r.top};
+  if(drawTool==='eraser'){
+    curShape.pts.push(pt);
+    drawCtx.save();drawCtx.globalCompositeOperation='destination-out';drawCtx.fillStyle='rgba(0,0,0,1)';
+    drawCtx.beginPath();drawCtx.arc(pt.x,pt.y,curShape.size,0,Math.PI*2);drawCtx.fill();drawCtx.restore();return;
+  }
+  if(drawTool==='pen'){
+    var last=curShape.pts[curShape.pts.length-1];
+    if(Math.pow(pt.x-last.x,2)+Math.pow(pt.y-last.y,2)<4)return;
+    curShape.pts.push(pt);redrawStrokes();drawShape(curShape);
+  }else{curShape.pts[1]=pt;redrawStrokes();drawShape(curShape);}
+});
+drawCv.addEventListener('mouseup',function(){
+  if(!drawing)return;drawing=false;
+  if(curShape){drawStrokes.push(curShape);curShape=null;redrawStrokes();}
+});
+drawCv.addEventListener('mouseleave',function(){
+  if(drawing){drawing=false;if(curShape){drawStrokes.push(curShape);curShape=null;redrawStrokes();}}
+});
+drawCv.addEventListener('contextmenu',function(e){e.preventDefault();});
+
+// ===== 复数计算器 =====
+var lastCalcResult=null;
+window._calcOp=function(op){
+  var re1=parseFloat(document.getElementById('calcRe1').value)||0;
+  var im1=parseFloat(document.getElementById('calcIm1').value)||0;
+  var re2=parseFloat(document.getElementById('calcRe2').value)||0;
+  var im2=parseFloat(document.getElementById('calcIm2').value)||0;
+  var rr,ri,opStr;
+  if(op==='+'){rr=re1+re2;ri=im1+im2;opStr='+';}
+  else if(op==='-'){rr=re1-re2;ri=im1-im2;opStr='−';}
+  else if(op==='*'){rr=re1*re2-im1*im2;ri=re1*im2+im1*re2;opStr='×';}
+  else if(op==='/'){
+    var d=re2*re2+im2*im2;
+    if(d<1e-15){document.getElementById('calcResult').innerHTML='<span class="op">除数为零！</span>';lastCalcResult=null;return;}
+    rr=(re1*re2+im1*im2)/d;ri=(im1*re2-re1*im2)/d;opStr='÷';
+  }
+  lastCalcResult={re:rr,im:ri};
+  document.getElementById('calcResult').innerHTML='<span class="op">('+fmtComplex(re1,im1)+') '+opStr+' ('+fmtComplex(re2,im2)+')</span><br>'
+    +'<span class="eq">= '+fmtComplex(rr,ri)+'</span>'
+    +'<br><span class="op">|z| = '+fmtNum(Math.sqrt(rr*rr+ri*ri))+'　arg = '+fmtNum(Math.atan2(ri,rr)*180/Math.PI)+'°</span>';
+};
+window._calcAddResult=function(){if(!lastCalcResult)return;addPoint(lastCalcResult.re,lastCalcResult.im,'运算结果');};
+document.getElementById('calcRe1').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('calcIm1').focus();});
+document.getElementById('calcIm1').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('calcRe2').focus();});
+document.getElementById('calcRe2').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('calcIm2').focus();});
+document.getElementById('calcIm2').addEventListener('keydown',function(e){if(e.key==='Enter')window._calcOp('+');});
+
+setupEvents();resize();window._calcOp('+');
+})();
+</script>
+</body>
+</html>

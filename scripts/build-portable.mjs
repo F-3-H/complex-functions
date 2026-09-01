@@ -38,14 +38,17 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
 .card:hover::before{opacity:1}
 .card .icon{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:14px;font-size:28px;margin-bottom:20px;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 100%);color:#fff;font-weight:bold;box-shadow:0 4px 16px rgba(0,212,255,0.25)}
 .card.integral .icon{background:linear-gradient(135deg,var(--accent2) 0%,var(--accent3) 100%);box-shadow:0 4px 16px rgba(123,47,247,0.25)}
+.card.vectors .icon{background:linear-gradient(135deg,#50fa7b 0%,var(--accent) 100%);box-shadow:0 4px 16px rgba(80,250,123,0.25)}
 .card h2{font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)}
 .card .tagline{font-size:13px;color:var(--accent);margin-bottom:14px;font-family:'Consolas','Courier New',monospace}
 .card.integral .tagline{color:var(--accent3)}
+.card.vectors .tagline{color:#50fa7b}
 .card .desc{font-size:14px;color:var(--text2);line-height:1.7;margin-bottom:20px}
 .card .features{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
 .card .features span{font-size:11px;padding:4px 10px;border:1px solid var(--border);border-radius:12px;color:var(--text2);background:rgba(0,0,0,0.2)}
 .card .open-btn{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--accent);transition:gap .2s ease}
 .card.integral .open-btn{color:var(--accent3)}
+.card.vectors .open-btn{color:#50fa7b}
 .card:hover .open-btn{gap:12px}
 .card .open-btn .arrow{font-size:16px}
 .footer{text-align:center;font-size:12px;color:var(--text2);opacity:0.7;line-height:1.8}
@@ -62,6 +65,8 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
       <span>双画板映射</span>
       <span class="sep">·</span>
       <span>积分可视化</span>
+      <span class="sep">·</span>
+      <span>矢量运算</span>
       <span class="sep">·</span>
       <span>交互式探索</span>
     </div>
@@ -81,6 +86,14 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
       <div class="tagline">∫ f(z) dz</div>
       <div class="desc">在 z 平面绘制路径，w 平面实时展示 f(z)·dz 矢量首尾相加的积分过程。支持多线段对比、动画播放，直观理解复变函数的环路积分性质。</div>
       <div class="features"><span>积分矢量可视化</span><span>多种绘图工具</span><span>多线段对比</span><span>动画播放</span><span>网格吸附</span></div>
+      <div class="open-btn">打开工具<span class="arrow">→</span></div>
+    </a>
+    <a class="card vectors" href="./vectors/index.html">
+      <div class="icon">↗</div>
+      <h2>复平面矢量图</h2>
+      <div class="tagline">z = a + bi</div>
+      <div class="desc">在复平面上以矢量形式呈现复数，将一个矢量头部拖至另一矢量尾部即可首尾相接，直观可视化复数加法。内置四则运算、模与辐角显示、涂鸦标注与单位根预设。</div>
+      <div class="features"><span>矢量首尾相接</span><span>拖拽吸附</span><span>复数四则运算</span><span>模与辐角</span><span>涂鸦标注</span></div>
       <div class="open-btn">打开工具<span class="arrow">→</span></div>
     </a>
   </div>
@@ -241,6 +254,15 @@ if (existsSync(join(PROJECT, 'integral', 'README.md'))) {
   copyFileSync(join(PROJECT, 'integral', 'README.md'), join(integralDest, 'README.md'));
 }
 
+// 3b. 复制 vectors/ 子项目
+log('copying vectors/ ...');
+const vectorsDest = join(DIST, 'vectors');
+mkdirSync(vectorsDest, { recursive: true });
+copyFileSync(join(PROJECT, 'vectors', 'index.html'), join(vectorsDest, 'index.html'));
+if (existsSync(join(PROJECT, 'vectors', 'README.md'))) {
+  copyFileSync(join(PROJECT, 'vectors', 'README.md'), join(vectorsDest, 'README.md'));
+}
+
 // 4. 写启动页
 log('writing launcher.html...');
 writeFileSync(join(DIST, 'launcher.html'), LAUNCHER_HTML, 'utf8');
@@ -269,16 +291,17 @@ log(`dist contains ${allFiles.length} files, ${(totalSize/1024).toFixed(1)} KB t
 for (const f of allFiles) console.log(`  ${f.path}  (${(f.size/1024).toFixed(1)} KB)`);
 
 // 7. 打包 zip（PowerShell Compress-Archive，排除 .map）
+// 注意：用临时 .ps1 文件执行，避免 -Command 内联字符串在含中文/反斜杠路径上的转义问题
 log('creating zip...');
 if (existsSync(ZIP_PATH)) rmSync(ZIP_PATH, { force: true });
 
 const psScript = `
 $ErrorActionPreference = 'Stop'
-$src = '${DIST.replace(/\\/g, '\\\\')}'
-$dst = '${ZIP_PATH.replace(/\\/g, '\\\\')}'
+$src = '${DIST.replace(/'/g, "''")}'
+$dst = '${ZIP_PATH.replace(/'/g, "''")}'
 $tempDir = Join-Path $env:TEMP "complex-pack-$(Get-Random)"
 New-Item -Path $tempDir -ItemType Directory -Force | Out-Null
-Get-ChildItem $src -Recurse -File | Where-Object { $_.Extension -ne '.map' } | ForEach-Object {
+Get-ChildItem -LiteralPath $src -Recurse -File | Where-Object { $_.Extension -ne '.map' } | ForEach-Object {
   $rel = $_.FullName.Substring($src.Length + 1)
   $dest = Join-Path $tempDir $rel
   $destDir = Split-Path $dest -Parent
@@ -288,7 +311,14 @@ Get-ChildItem $src -Recurse -File | Where-Object { $_.Extension -ne '.map' } | F
 Compress-Archive -Path (Join-Path $tempDir "*") -DestinationPath $dst -Force
 Remove-Item $tempDir -Recurse -Force
 `;
-execSync(`powershell -NoProfile -Command "${psScript.replace(/"/g, '\\"')}"`, { stdio: 'inherit' });
+const psFile = join(PROJECT, 'scripts', '_zip-pack.ps1');
+// 写入 UTF-8 BOM，避免 Windows PowerShell 5.1 以 ANSI(GBK) 误读中文路径
+writeFileSync(psFile, '\uFEFF' + psScript, 'utf8');
+try {
+  execSync(`powershell -NoProfile -ExecutionPolicy Bypass -File "${psFile}"`, { stdio: 'inherit' });
+} finally {
+  if (existsSync(psFile)) rmSync(psFile, { force: true });
+}
 
 const zipStat = statSync(ZIP_PATH);
 log(`zip created: ${ZIP_PATH}`);
