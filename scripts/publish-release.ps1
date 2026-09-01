@@ -1,4 +1,4 @@
-# 复变函数工具集 GitHub Release 发布脚本
+﻿# 复变函数工具集 GitHub Release 发布脚本
 # 用法：
 #   1. 先登录 gh（只需一次）：  gh auth login
 #   2. 运行此脚本：            powershell -ExecutionPolicy Bypass -File scripts\publish-release.ps1
