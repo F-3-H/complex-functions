@@ -80,7 +80,7 @@ export default function FunctionEditor() {
                 ? 'border-emerald-500/40'
                 : 'border-deep-600 focus:border-cyan-glow/60',
           ].join(' ')}
-          style={{ color: '#e2e8f0' }}
+          style={{ color: 'rgb(var(--c-slate-200))' }}
         />
         <div className="absolute top-2 right-2">
           {status === 'ok' && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}

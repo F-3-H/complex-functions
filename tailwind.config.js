@@ -9,16 +9,29 @@ export default {
     },
     extend: {
       colors: {
+        /* 颜色走 CSS 变量（rgb 分量），以支持黑夜/白天主题切换 */
         'deep': {
-          900: '#0a0e1a',
-          800: '#111827',
-          700: '#1e293b',
-          600: '#334155',
+          900: 'rgb(var(--c-deep-900) / <alpha-value>)',
+          800: 'rgb(var(--c-deep-800) / <alpha-value>)',
+          700: 'rgb(var(--c-deep-700) / <alpha-value>)',
+          600: 'rgb(var(--c-deep-600) / <alpha-value>)',
         },
-        'cyan-glow': '#00d4ff',
-        'purple-accent': '#a855f7',
-        'real-axis': '#ef4444',
-        'imag-axis': '#22c55e',
+        'slate': {
+          50:  'rgb(var(--c-slate-50) / <alpha-value>)',
+          100: 'rgb(var(--c-slate-100) / <alpha-value>)',
+          200: 'rgb(var(--c-slate-200) / <alpha-value>)',
+          300: 'rgb(var(--c-slate-300) / <alpha-value>)',
+          400: 'rgb(var(--c-slate-400) / <alpha-value>)',
+          500: 'rgb(var(--c-slate-500) / <alpha-value>)',
+          600: 'rgb(var(--c-slate-600) / <alpha-value>)',
+          700: 'rgb(var(--c-slate-700) / <alpha-value>)',
+          800: 'rgb(var(--c-slate-800) / <alpha-value>)',
+          900: 'rgb(var(--c-slate-900) / <alpha-value>)',
+        },
+        'cyan-glow': 'rgb(var(--c-cyan-glow) / <alpha-value>)',
+        'purple-accent': 'rgb(var(--c-purple-accent) / <alpha-value>)',
+        'real-axis': 'rgb(var(--c-real-axis) / <alpha-value>)',
+        'imag-axis': 'rgb(var(--c-imag-axis) / <alpha-value>)',
       },
       fontFamily: {
         'mono': ['"JetBrains Mono"', '"Fira Code"', 'ui-monospace', 'monospace'],

@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback } from 'react';
-import { FunctionSquare, Github, BookOpen } from 'lucide-react';
+import { FunctionSquare, BookOpen, Moon, Sun } from 'lucide-react';
 import ComplexPlane from '@/components/ComplexPlane';
 import FunctionEditor from '@/components/FunctionEditor';
 import ParamEditor from '@/components/ParamEditor';
@@ -22,6 +22,29 @@ function MiniComplex({ z, zColor }: { z: Complex | null | undefined; zColor: str
     <span className={`${zColor} tabular-nums`}>
       {re}{imSign}{imCoef}i
     </span>
+  );
+}
+
+/* 黑夜 / 白天主题切换按钮 */
+function ThemeToggle() {
+  const [light, setLight] = useState(() => document.documentElement.dataset.theme === 'light');
+  const toggle = () => {
+    const d = document.documentElement;
+    const isLight = d.dataset.theme === 'light';
+    if (isLight) delete d.dataset.theme;
+    else d.dataset.theme = 'light';
+    try { localStorage.setItem('theme', isLight ? 'dark' : 'light'); } catch { /* ignore */ }
+    setLight(!isLight);
+  };
+  return (
+    <button
+      onClick={toggle}
+      aria-label="切换主题"
+      title="切换黑夜 / 白天"
+      className="ml-1 shrink-0 w-8 h-8 rounded-full border border-deep-600 bg-deep-800/60 text-slate-300 hover:text-cyan-glow hover:border-cyan-glow/50 inline-flex items-center justify-center transition"
+    >
+      {light ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </button>
   );
 }
 
@@ -116,14 +139,8 @@ export default function Home() {
           >
             <BookOpen className="w-3.5 h-3.5" /> 使用说明
           </a>
-          <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
-            className="px-2.5 py-1.5 rounded-md text-[11px] border border-deep-600 bg-deep-800/60 text-slate-300 hover:text-cyan-glow hover:border-cyan-glow/50 inline-flex items-center gap-1.5 transition"
-          >
-            <Github className="w-3.5 h-3.5" /> 源码
-          </a>
         </div>
+        <ThemeToggle />
       </header>
 
       {/* ===== 主体 ===== */}

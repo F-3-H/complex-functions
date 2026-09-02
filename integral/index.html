@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>/* theme anti-flash */
@@ -10,10 +10,16 @@
 <title>复变函数积分计算器</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#1a1a2e;--bg2:#16213e;--accent:#00d4ff;--accent2:#7b2ff7;--text:#e0e0e0;--text2:#8899aa;--border:#2a2a4a}
+:root{--bg:#1a1a2e;--bg2:#16213e;--accent:#00d4ff;--accent2:#7b2ff7;--text:#e0e0e0;--text2:#8899aa;--border:#2a2a4a;
+  --cv-grid-minor:rgba(255,255,255,0.05);--cv-grid-major:rgba(255,255,255,0.12);--cv-axis:rgba(255,255,255,0.32);
+  --cv-tick:rgba(255,255,255,0.45);--cv-dash:rgba(255,255,255,0.6);--cv-dash2:rgba(255,255,255,0.35);
+  --cv-ghost:rgba(255,255,255,0.15);--cv-result:#ffcc00;--cv-result-soft:rgba(255,204,0,0.6);--result:#ffcc00}
 
 :root[data-theme="light"]{
   --bg:#eef2f6;--bg2:#ffffff;--accent:#0088cc;--accent2:#7b2ff7;--text:#1a1a2e;--text2:#5a6572;--border:#c4cbd4;
+  --cv-grid-minor:rgba(30,41,59,0.10);--cv-grid-major:rgba(30,41,59,0.22);--cv-axis:rgba(15,23,42,0.55);
+  --cv-tick:rgba(15,23,42,0.60);--cv-dash:rgba(15,23,42,0.65);--cv-dash2:rgba(15,23,42,0.40);
+  --cv-ghost:rgba(15,23,42,0.15);--cv-result:#d97706;--cv-result-soft:rgba(217,119,6,0.65);--result:#b45309;
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh;display:flex;flex-direction:column}
 .header{display:flex;align-items:center;gap:10px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;height:42px}
@@ -41,7 +47,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .bottom .val{font-size:12px;color:var(--accent);min-width:40px}
 .bottom button{padding:3px 10px;background:#0d1117;border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;cursor:pointer;white-space:nowrap}
 .bottom button:hover{border-color:var(--accent);color:var(--accent)}
-.bottom .result{font-family:monospace;font-size:12px;color:#ffcc00;white-space:nowrap}
+.bottom .result{font-family:monospace;font-size:12px;color:var(--result);white-space:nowrap}
 .bottom .coords{font-family:monospace;font-size:11px;color:var(--text2);white-space:nowrap}
 
 :root[data-theme="light"] body .toolbar button,:root[data-theme="light"] body .bottom button,:root[data-theme="light"] body .header button,:root[data-theme="light"] body .header select,:root[data-theme="light"] body .toolbar select,:root[data-theme="light"] body input[type=text],:root[data-theme="light"] body input[type=number]{background:#ffffff;border-color:var(--border);color:var(--text) !important};/* --input-bg-light marker -- */
@@ -385,6 +391,7 @@ View.prototype.clear=function(){
   this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
   this.ctx.setTransform(this.dpr,0,0,this.dpr,0,0);
 };
+function tcol(n,f){try{var v=getComputedStyle(document.documentElement).getPropertyValue(n).trim();return v||f;}catch(e){return f;}}
 View.prototype.drawGrid=function(){
   var ctx=this.ctx;
   var s=this.scale;
@@ -401,7 +408,7 @@ View.prototype.drawGrid=function(){
   var minorStep=step/5;
   ctx.save();
   // Minor grid
-  ctx.strokeStyle='rgba(255,255,255,0.04)';
+  ctx.strokeStyle=tcol('--cv-grid-minor','rgba(255,255,255,0.04)');
   ctx.lineWidth=0.5;
   var x0=Math.floor(rangeX[0]/minorStep)*minorStep;
   var y0=Math.floor(rangeY[0]/minorStep)*minorStep;
@@ -416,7 +423,7 @@ View.prototype.drawGrid=function(){
   }
   ctx.stroke();
   // Major grid
-  ctx.strokeStyle='rgba(255,255,255,0.1)';
+  ctx.strokeStyle=tcol('--cv-grid-major','rgba(255,255,255,0.1)');
   ctx.lineWidth=0.5;
   x0=Math.floor(rangeX[0]/step)*step;
   y0=Math.floor(rangeY[0]/step)*step;
@@ -431,7 +438,7 @@ View.prototype.drawGrid=function(){
   }
   ctx.stroke();
   // Axes
-  ctx.strokeStyle='rgba(255,255,255,0.3)';
+  ctx.strokeStyle=tcol('--cv-axis','rgba(255,255,255,0.3)');
   ctx.lineWidth=1;
   ctx.beginPath();
   var ox=(0-this.cx)*s+this.w/2;
@@ -440,7 +447,7 @@ View.prototype.drawGrid=function(){
   ctx.moveTo(0,oy);ctx.lineTo(this.w,oy);
   ctx.stroke();
   // Tick labels
-  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.fillStyle=tcol('--cv-tick','rgba(255,255,255,0.4)');
   ctx.font='10px sans-serif';
   ctx.textAlign='center';
   ctx.textBaseline='top';
@@ -787,7 +794,7 @@ function renderZPanel(){
         var si=strokeIntegrals[s];
         var covered=Math.min(anim.k+1,si.sampledPts.length);
         drawPathOnView(zView,si.sampledPts.slice(0,covered),col,2);
-        drawPathOnView(zView,si.sampledPts.slice(covered-1),'rgba(255,255,255,0.15)',1.5,true);
+        drawPathOnView(zView,si.sampledPts.slice(covered-1),tcol('--cv-ghost','rgba(255,255,255,0.15)'),1.5,true);
       }else{
         drawPathOnView(zView,pts,col,2);
         drawDirectionArrows(zView,pts,col,30);
@@ -886,7 +893,7 @@ function renderWPanel(){
     var tw=totalIntegralData.totalIntegral;
     var sf=wView.toScreen(tw[0],tw[1]);
     ctx.save();
-    ctx.strokeStyle='rgba(255,204,0,0.6)';
+    ctx.strokeStyle=tcol('--cv-result-soft','rgba(255,204,0,0.6)');
     ctx.lineWidth=1.5;
     ctx.setLineDash([6,4]);
     ctx.beginPath();
@@ -894,7 +901,7 @@ function renderWPanel(){
     ctx.lineTo(sf[0],sf[1]);
     ctx.stroke();
     ctx.restore();
-    ctx.fillStyle='#ffcc00';
+    ctx.fillStyle=tcol('--cv-result','#ffcc00');
     ctx.beginPath();
     ctx.arc(sf[0],sf[1],6,0,Math.PI*2);
     ctx.fill();
@@ -1004,7 +1011,7 @@ function drawCurrentToolPreview(view,isWPanel){
   var pts=st.points;
   ctx.save();
   ctx.globalAlpha=0.5;
-  ctx.strokeStyle='#ffffff';
+  ctx.strokeStyle=tcol('--cv-dash','#ffffff');
   ctx.lineWidth=1.5;
   ctx.setLineDash([4,4]);
   if(currentTool==='pen'&&pts.length>1){
@@ -1026,7 +1033,7 @@ function drawCurrentToolPreview(view,isWPanel){
   }else if(currentTool==='polyline'&&pts.length>=1){
     if(pts.length>=2){
       ctx.globalAlpha=0.8;
-      ctx.strokeStyle='#00d4ff';
+      ctx.strokeStyle=tcol('--cv-accent','#00d4ff');
       ctx.lineWidth=2;
       ctx.setLineDash([]);
       ctx.beginPath();
@@ -1040,7 +1047,7 @@ function drawCurrentToolPreview(view,isWPanel){
     }
     if(st.active&&st.previewPt){
       ctx.globalAlpha=0.5;
-      ctx.strokeStyle='#ffffff';
+      ctx.strokeStyle=tcol('--cv-dash','#ffffff');
       ctx.lineWidth=1.5;
       ctx.setLineDash([4,4]);
       var sl=view.toScreen(pts[pts.length-1].x,pts[pts.length-1].y);
@@ -1051,7 +1058,7 @@ function drawCurrentToolPreview(view,isWPanel){
       ctx.stroke();
     }
     ctx.globalAlpha=0.8;
-    ctx.fillStyle='#00d4ff';
+    ctx.fillStyle=tcol('--cv-accent','#00d4ff');
     for(var i=0;i<pts.length;i++){
       var sp2=view.toScreen(pts[i].x,pts[i].y);
       ctx.beginPath();
@@ -1261,11 +1268,11 @@ function drawSnapIndicator(view){
   var ctx=view.ctx;
   var s=view.toScreen(snapPoint.x,snapPoint.y);
   ctx.save();
-  ctx.fillStyle='rgba(255,255,255,0.6)';
+  ctx.fillStyle=tcol('--cv-dash','rgba(255,255,255,0.6)');
   ctx.beginPath();
   ctx.arc(s[0],s[1],3,0,Math.PI*2);
   ctx.fill();
-  ctx.strokeStyle='rgba(255,255,255,0.3)';
+  ctx.strokeStyle=tcol('--cv-dash2','rgba(255,255,255,0.3)');
   ctx.lineWidth=0.5;
   ctx.setLineDash([2,2]);
   var ox=(0-view.cx)*view.scale+view.w/2;
@@ -1536,7 +1543,7 @@ init();
 <button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换黑夜 / 白天">
   <span class="moon">☾</span><span class="sun">☀</span>
 </button>
-<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}});}})();</script>
+<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}if(typeof renderAll==='function'){try{renderAll();}catch(e){}}});}})();</script>
 
 </body>
 </html>

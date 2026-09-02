@@ -30,6 +30,16 @@ type DrawingState = {
   arcStart: Complex | null;
 } | null;
 
+/** 读取主题 CSS 变量（canvas 无法直接使用 var()） */
+function themeCol(name: string, fallback: string): string {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 /* ==========  配置常量（吸附/缩放/刻度）  ========== */
 /** 缩放极限（scale = 像素 / 1 复数单位） */
 const SCALE_MIN = 1;     // 最缩小（看大范围）：1 复数单位 = 1 像素
@@ -249,7 +259,7 @@ export default function ComplexPlane({
     if (planeType !== 'z') return null;
     const d = drawingRef.current;
     if (!d) return null;
-    const COLOR = '#fbbf24';
+    const COLOR = themeCol('--cv-draw', '#fbbf24');
 
     if (d.mode === 'free' && d.points.length > 0) {
       return { points: d.points, color: COLOR, markers: [] };
@@ -310,7 +320,7 @@ export default function ComplexPlane({
     ctx.scale(dpr, dpr);
     const { w, h } = size;
 
-    ctx.fillStyle = '#050814';
+    ctx.fillStyle = themeCol('--cv-bg', '#050814');
     ctx.fillRect(0, 0, w, h);
     drawGrid(ctx, w, h);
     drawAxes(ctx, w, h);
@@ -339,7 +349,7 @@ export default function ComplexPlane({
       );
     } else if (planeType === 'z' && hoverRef.current && hoverScreenRef.current) {
       // 没吸附：普通准星
-      drawCrosshair(ctx, hoverRef.current, '#ffffff4d');
+      drawCrosshair(ctx, hoverRef.current, themeCol('--cv-cross', '#ffffff4d'));
     }
 
     ctx.restore();
@@ -358,7 +368,7 @@ export default function ComplexPlane({
 
     // 次网格
     if (minor > 0) {
-      ctx.strokeStyle = 'rgba(71, 85, 105, 0.22)';
+      ctx.strokeStyle = themeCol('--cv-grid-minor', 'rgba(71, 85, 105, 0.22)');
       ctx.lineWidth = 0.6;
       ctx.beginPath();
       const sr0 = Math.floor(leftR / minor) * minor;
@@ -375,7 +385,7 @@ export default function ComplexPlane({
     }
 
     // 主网格
-    ctx.strokeStyle = 'rgba(100, 116, 139, 0.45)';
+    ctx.strokeStyle = themeCol('--cv-grid-major', 'rgba(100, 116, 139, 0.45)');
     ctx.lineWidth = 0.9;
     ctx.beginPath();
     const sr2 = Math.floor(leftR / major) * major;
@@ -391,7 +401,7 @@ export default function ComplexPlane({
     ctx.stroke();
 
     // 刻度文字（高放大时显示更多小数位，低缩放下简写 K）
-    ctx.fillStyle = 'rgba(148, 163, 184, 0.85)';
+    ctx.fillStyle = themeCol('--cv-tick', 'rgba(148, 163, 184, 0.85)');
     ctx.font = '11px "JetBrains Mono", ui-monospace, monospace';
     const originPx = complexToScreen(C(0, 0));
     const fmtNum = (n: number) => {
@@ -445,7 +455,7 @@ export default function ComplexPlane({
     ctx.fill();
     ctx.fillText('Im', Math.min(o.x + 6, w - 28), 10);
     // 原点
-    ctx.fillStyle = '#e2e8f0';
+    ctx.fillStyle = themeCol('--cv-tick', '#e2e8f0');
     ctx.beginPath();
     ctx.arc(o.x, o.y, 2.5, 0, Math.PI * 2);
     ctx.fill();
@@ -807,6 +817,14 @@ export default function ComplexPlane({
     drawingRef.current = null;
     forceRerender();
   }, [activeTool]);
+
+  // 主题切换（data-theme 变化）时重绘画布
+  useEffect(() => {
+    const mo = new MutationObserver(() => forceRerender());
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => mo.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stageHint = (() => {
     if (planeType !== 'z' || activeTool === 'select') return null;

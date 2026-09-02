@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <script>/* theme anti-flash */
@@ -10,10 +10,14 @@
 <title>复平面矢量图</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#1a1a2e;--panel:#16213e;--accent:#00d4ff;--text:#e0e0e0;--dim:#8899aa;--border:#2a2a4a;--err:#ff6b6b;--ok:#50fa7b;--accent2:#ffd93d}
+:root{--bg:#1a1a2e;--panel:#16213e;--accent:#00d4ff;--text:#e0e0e0;--dim:#8899aa;--border:#2a2a4a;--err:#ff6b6b;--ok:#50fa7b;--accent2:#ffd93d;
+  --cv-grid-minor:rgba(255,255,255,0.04);--cv-grid-sub:rgba(255,255,255,0.08);--cv-axis:rgba(255,255,255,0.25);
+  --cv-tick:rgba(255,255,255,0.3);--cv-hint:rgba(255,255,255,0.15);--cv-coord:rgba(255,255,255,0.5)}
 
 :root[data-theme="light"]{
   --bg:#eef2f6;--panel:#ffffff;--accent:#0088cc;--text:#1a1a2e;--dim:#5a6572;--border:#c4cbd4;--err:#cc3333;--ok:#22aa44;--accent2:#cc8800;
+  --cv-grid-minor:rgba(30,41,59,0.08);--cv-grid-sub:rgba(30,41,59,0.16);--cv-axis:rgba(15,23,42,0.5);
+  --cv-tick:rgba(15,23,42,0.55);--cv-hint:rgba(15,23,42,0.18);--cv-coord:rgba(15,23,42,0.55);
 }
 body{font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
 #sidebar{width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
@@ -212,6 +216,7 @@ function getTail(p){
 }
 function getTip(p){return[p.re+p.ox, p.im+p.oy];}
 
+function tcol(n,f){try{var v=getComputedStyle(document.documentElement).getPropertyValue(n).trim();return v||f;}catch(e){return f;}}
 function drawGrid(){
   var s=scale;
   var rangeX=[cx-viewW/(2*s),cx+viewW/(2*s)];
@@ -222,22 +227,22 @@ function drawGrid(){
   var step=res<2?mag:res<5?2*mag:5*mag;
   var minorStep=step/5;
   ctx.save();
-  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
+  ctx.strokeStyle=tcol('--cv-grid-minor','rgba(255,255,255,0.04)');ctx.lineWidth=0.5;
   var x0=Math.floor(rangeX[0]/minorStep)*minorStep,y0=Math.floor(rangeY[0]/minorStep)*minorStep;
   ctx.beginPath();
   for(var x=x0;x<=rangeX[1];x+=minorStep){var sx=(x-cx)*s+viewW/2;ctx.moveTo(sx,0);ctx.lineTo(sx,viewH);}
   for(var y=y0;y<=rangeY[1];y+=minorStep){var sy=(cy-y)*s+viewH/2;ctx.moveTo(0,sy);ctx.lineTo(viewW,sy);}
   ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.08)';
+  ctx.strokeStyle=tcol('--cv-grid-sub','rgba(255,255,255,0.08)');
   x0=Math.floor(rangeX[0]/step)*step;y0=Math.floor(rangeY[0]/step)*step;
   ctx.beginPath();
   for(var x=x0;x<=rangeX[1];x+=step){var sx=(x-cx)*s+viewW/2;ctx.moveTo(sx,0);ctx.lineTo(sx,viewH);}
   for(var y=y0;y<=rangeY[1];y+=step){var sy=(cy-y)*s+viewH/2;ctx.moveTo(0,sy);ctx.lineTo(viewW,sy);}
   ctx.stroke();
-  ctx.strokeStyle='rgba(255,255,255,0.25)';ctx.lineWidth=1;
+  ctx.strokeStyle=tcol('--cv-axis','rgba(255,255,255,0.25)');ctx.lineWidth=1;
   var ox=(0-cx)*s+viewW/2,oy=(cy-0)*s+viewH/2;
   ctx.beginPath();ctx.moveTo(ox,0);ctx.lineTo(ox,viewH);ctx.moveTo(0,oy);ctx.lineTo(viewW,oy);ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='10px sans-serif';
+  ctx.fillStyle=tcol('--cv-tick','rgba(255,255,255,0.3)');ctx.font='10px sans-serif';
   ctx.textAlign='center';ctx.textBaseline='top';
   for(var x=Math.floor(rangeX[0]/step)*step;x<=rangeX[1];x+=step){
     if(Math.abs(x)<step*0.01)continue;ctx.fillText(fmtNum(x),(x-cx)*s+viewW/2,oy+3);
@@ -246,7 +251,7 @@ function drawGrid(){
   for(var y=Math.floor(rangeY[0]/step)*step;y<=rangeY[1];y+=step){
     if(Math.abs(y)<step*0.01)continue;ctx.fillText(fmtNum(y)+'i',ox-4,(cy-y)*s+viewH/2);
   }
-  ctx.fillStyle='rgba(255,255,255,0.15)';ctx.textAlign='left';ctx.textBaseline='top';
+  ctx.fillStyle=tcol('--cv-hint','rgba(255,255,255,0.15)');ctx.textAlign='left';ctx.textBaseline='top';
   ctx.fillText('Re',viewW-22,oy+4);ctx.textBaseline='bottom';ctx.fillText('Im',ox+4,10);
   ctx.restore();
 }
@@ -285,7 +290,7 @@ function render(){
       ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(p.label,sp[0]+8,sp[1]-6);ctx.restore();
     }
     if(showCoord){
-      ctx.save();ctx.fillStyle='rgba(255,255,255,0.5)';ctx.font='10px Consolas,"Courier New",monospace';
+      ctx.save();ctx.fillStyle=tcol('--cv-coord','rgba(255,255,255,0.5)');ctx.font='10px Consolas,"Courier New",monospace';
       ctx.textAlign='left';ctx.textBaseline='top';ctx.fillText('('+fmtComplex(p.re,p.im)+')',sp[0]+8,sp[1]+4);ctx.restore();
     }
   }
@@ -681,7 +686,7 @@ setupEvents();resize();window._calcOp('+');
 <button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换黑夜 / 白天">
   <span class="moon">☾</span><span class="sun">☀</span>
 </button>
-<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}});}})();</script>
+<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}if(typeof render==='function'){try{render();}catch(e){}}});}})();</script>
 
 </body>
 </html>

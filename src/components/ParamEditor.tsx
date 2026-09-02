@@ -122,7 +122,7 @@ function ExprRow({ label, sub, value, accent, placeholder, error, synced, onChan
               : 'border-deep-600 focus:border-cyan-glow/60',
           'focus:ring-1 focus:ring-cyan-glow/40',
         ].join(' ')}
-        style={{ color: '#e2e8f0' }}
+        style={{ color: 'rgb(var(--c-slate-200))' }}
       />
       {error && synced && (
         <div className="text-[10px] text-red-400 flex items-center gap-1">
@@ -277,7 +277,7 @@ export default function ParamEditor() {
               value={tRange.start}
               onChange={(e) => setTRange({ start: parseFloat(e.target.value) || 0 })}
               className="mt-0.5 w-full rounded-md font-mono text-[12px] px-2 py-1 bg-deep-900 border border-deep-600 focus:border-cyan-glow/60 focus:ring-1 focus:ring-cyan-glow/40"
-              style={{ color: '#e2e8f0' }}
+              style={{ color: 'rgb(var(--c-slate-200))' }}
             />
           </label>
           <label className="text-[10px] text-slate-500">
@@ -288,7 +288,7 @@ export default function ParamEditor() {
               value={tRange.end}
               onChange={(e) => setTRange({ end: parseFloat(e.target.value) || 0 })}
               className="mt-0.5 w-full rounded-md font-mono text-[12px] px-2 py-1 bg-deep-900 border border-deep-600 focus:border-cyan-glow/60 focus:ring-1 focus:ring-cyan-glow/40"
-              style={{ color: '#e2e8f0' }}
+              style={{ color: 'rgb(var(--c-slate-200))' }}
             />
           </label>
           <label className="text-[10px] text-slate-500">
@@ -301,7 +301,7 @@ export default function ParamEditor() {
               value={tRange.samples}
               onChange={(e) => setTRange({ samples: Math.max(20, Math.min(5000, parseInt(e.target.value) || 400)) })}
               className="mt-0.5 w-full rounded-md font-mono text-[12px] px-2 py-1 bg-deep-900 border border-deep-600 focus:border-cyan-glow/60 focus:ring-1 focus:ring-cyan-glow/40"
-              style={{ color: '#e2e8f0' }}
+              style={{ color: 'rgb(var(--c-slate-200))' }}
             />
           </label>
         </div>
