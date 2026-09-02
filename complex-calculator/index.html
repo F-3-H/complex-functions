@@ -1,11 +1,20 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>/* theme anti-flash */
+(function(){try{var sp=new URLSearchParams(location.search);var t=sp.get('theme')||localStorage.getItem('theme');if(t==='light'){document.documentElement.dataset.theme='light';}}catch(e){}})();
+</script>
+
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>复变函数计算器 · e^(iθ) 矢量动画</title>
 <style>
-  :root { --ink:#1c2733; --muted:#5b6b7b; --line:#dfe5ea; --accent:#2563eb; --card:#ffffff; --bg:#eef2f6; }
+  :root{
+  --ink:#e0e0e0;--muted:#8899aa;--line:#2a2a4a;--accent:#2563eb;--card:rgba(22,33,62,.6);--bg:#0f0f1e;
+}
+:root[data-theme="light"]{
+  --ink:#1c2733;--muted:#5b6b7b;--line:#dfe5ea;--accent:#2563eb;--card:#ffffff;--bg:#eef2f6;
+}
   * { box-sizing:border-box; }
   body { margin:0; font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
   header { padding:18px 20px 8px; max-width:1500px; margin:0 auto; }
@@ -1035,5 +1044,18 @@ updatePlayBtn();
 requestAnimationFrame(loop);
 })();
 </script>
+<style>
+.theme-toggle{position:fixed;top:14px;right:14px;z-index:9999;width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,.35);background:rgba(40,40,60,.75);color:#e0e0e0;backdrop-filter:blur(10px);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:transform .2s ease}
+.theme-toggle:hover{transform:rotate(20deg)}
+.theme-toggle .sun{display:none}.theme-toggle .moon{display:block}
+:root[data-theme="light"] .theme-toggle{background:rgba(255,255,255,.9);color:#1a1a2e;border-color:rgba(0,0,0,.12)}
+:root[data-theme="light"] .theme-toggle .sun{display:block}:root[data-theme="light"] .theme-toggle .moon{display:none}
+</style>
+
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换黑夜 / 白天">
+  <span class="moon">☾</span><span class="sun">☀</span>
+</button>
+<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}});}})();</script>
+
 </body>
 </html>

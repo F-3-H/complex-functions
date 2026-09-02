@@ -1,12 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>/* theme anti-flash */
+(function(){try{var sp=new URLSearchParams(location.search);var t=sp.get('theme')||localStorage.getItem('theme');if(t==='light'){document.documentElement.dataset.theme='light';}}catch(e){}})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>复平面矢量图</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#1a1a2e;--panel:#16213e;--accent:#00d4ff;--text:#e0e0e0;--dim:#8899aa;--border:#2a2a4a;--err:#ff6b6b;--ok:#50fa7b;--accent2:#ffd93d}
+
+:root[data-theme="light"]{
+  --bg:#eef2f6;--panel:#ffffff;--accent:#0088cc;--text:#1a1a2e;--dim:#5a6572;--border:#c4cbd4;--err:#cc3333;--ok:#22aa44;--accent2:#cc8800;
+}
 body{font-family:'Segoe UI','Microsoft YaHei',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden}
 #sidebar{width:320px;min-width:320px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 #sidebar h1{font-size:16px;padding:12px 14px 2px;color:var(--accent)}
@@ -70,6 +78,8 @@ canvas{display:block;width:100%;height:100%}
 .calc-result{font-family:Consolas,'Courier New',monospace;font-size:12px;background:#0d1117;border:1px solid var(--border);border-radius:6px;padding:6px 8px;margin-top:4px;line-height:1.6;color:var(--accent2);min-height:24px;word-break:break-all}
 .calc-result .op{color:var(--dim);font-size:10px}
 .calc-result .eq{color:var(--ok);font-weight:bold}
+
+:root[data-theme="light"] body button,:root[data-theme="light"] body select,:root[data-theme="light"] body input{background:#ffffff;border-color:var(--border);color:var(--text) !important};/* --input-bg-light marker -- */
 </style>
 </head>
 <body>
@@ -658,5 +668,21 @@ document.getElementById('calcIm2').addEventListener('keydown',function(e){if(e.k
 setupEvents();resize();window._calcOp('+');
 })();
 </script>
+<style>
+.theme-toggle{position:fixed;top:14px;right:14px;z-index:9999;width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,.35);background:rgba(40,40,60,.75);color:#e0e0e0;backdrop-filter:blur(10px);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:transform .2s ease}
+.theme-toggle:hover{transform:rotate(20deg)}
+.theme-toggle .sun{display:none}.theme-toggle .moon{display:block}
+:root[data-theme="light"] .theme-toggle{background:rgba(255,255,255,.9);color:#1a1a2e;border-color:rgba(0,0,0,.12)}
+:root[data-theme="light"] .theme-toggle .sun{display:block}:root[data-theme="light"] .theme-toggle .moon{display:none}
+
+:root[data-theme="light"] body button,:root[data-theme="light"] body select,:root[data-theme="light"] body input{background:#ffffff;border-color:var(--border);color:var(--text) !important};/* --input-bg-light marker -- */
+</style>
+
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换黑夜 / 白天">
+  <span class="moon">☾</span><span class="sun">☀</span>
+</button>
+<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}});}})();</script>
+
 </body>
 </html>
+

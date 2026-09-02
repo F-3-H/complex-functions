@@ -32,7 +32,7 @@ if (-not (Test-Path $zipPath)) {
     exit 1
 }
 
-$version = "v1.4.0"
+$version = "v1.5.0"
 $title = "复变函数工具集 $version 离线便携版"
 $notes = @"
 ## 复变函数工具集 $version
@@ -41,8 +41,10 @@ $notes = @"
 
 ## 本版更新
 
-- 启动页全面重设计：单屏尽览全部五个工具（宽屏单排五卡）
-- 数学艺术风格：漂浮数学符号背景、欧拉公式装饰行、五色主题卡片、顶部光条与入场动画
+- 全工具双主题（黑夜 / 白天）：所有 5 个页面支持一键切换，主题偏好 localStorage 持久化
+- 启动页标题从渐变彩色改为纯色（黑夜白色 / 白天黑色）
+- 每个页面右上角 ☾/☀ 切换按钮；anti-flash 脚本防止主题闪白
+- 切换范围：启动器 + 主应用 + integral + vectors + complex-calculator + integral-exp
 
 ## 包含工具
 
@@ -124,3 +126,4 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "发布失败，请检查错误信息" -ForegroundColor Red
     exit 1
 }
+

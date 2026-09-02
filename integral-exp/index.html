@@ -1,6 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>/* theme anti-flash */
+(function(){try{var sp=new URLSearchParams(location.search);var t=sp.get('theme')||localStorage.getItem('theme');if(t==='light'){document.documentElement.dataset.theme='light';}}catch(e){}})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>积分可视化计算器 · ∫e^(st)dt 复平面积分</title>
@@ -24,6 +28,10 @@
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --serif:"Noto Serif SC","Songti SC","SimSun",serif;
   --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+}
+
+:root[data-theme="light"]{
+  --bg:#eef2f6;--card:rgba(255,255,255,.85);--card-solid:#ffffff;--line:rgba(0,0,0,.1);--line-strong:rgba(0,0,0,.22);--ink:#1a1a2e;--ink-dim:#5a6572;--ink-faint:#8899aa;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -142,6 +150,8 @@ input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;bac
   .threepack{flex-direction:column}
   .preset-grid{grid-template-columns:1fr}
 }
+
+:root[data-theme="light"] body button,:root[data-theme="light"] body select,:root[data-theme="light"] body input{background:#ffffff;border-color:var(--border);color:var(--text) !important};/* --input-bg-light marker -- */
 </style>
 </head>
 <body>
@@ -855,5 +865,21 @@ syncSliders();
 refresh();
 requestAnimationFrame(loop);
 </script>
+<style>
+.theme-toggle{position:fixed;top:14px;right:14px;z-index:9999;width:36px;height:36px;border-radius:50%;border:1px solid rgba(128,128,128,.35);background:rgba(40,40,60,.75);color:#e0e0e0;backdrop-filter:blur(10px);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;line-height:1;transition:transform .2s ease}
+.theme-toggle:hover{transform:rotate(20deg)}
+.theme-toggle .sun{display:none}.theme-toggle .moon{display:block}
+:root[data-theme="light"] .theme-toggle{background:rgba(255,255,255,.9);color:#1a1a2e;border-color:rgba(0,0,0,.12)}
+:root[data-theme="light"] .theme-toggle .sun{display:block}:root[data-theme="light"] .theme-toggle .moon{display:none}
+
+:root[data-theme="light"] body button,:root[data-theme="light"] body select,:root[data-theme="light"] body input{background:#ffffff;border-color:var(--border);color:var(--text) !important};/* --input-bg-light marker -- */
+</style>
+
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换黑夜 / 白天">
+  <span class="moon">☾</span><span class="sun">☀</span>
+</button>
+<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var isLight=d.dataset.theme==='light';if(isLight)delete d.dataset.theme;else d.dataset.theme='light';try{localStorage.setItem('theme',isLight?'dark':'light');}catch(e){}});}})();</script>
+
 </body>
 </html>
+

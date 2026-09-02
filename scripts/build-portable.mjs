@@ -14,45 +14,72 @@ const ZIP_PATH = join(PROJECT, 'complex-tools-portable.zip');
 function log(msg) { console.log(`[portable] ${msg}`); }
 
 // ============ 启动页 HTML ============
-// 设计目标：一屏尽览全部工具（宽屏单排五卡）+ 数学艺术风格（漂浮符号、欧拉公式、主题色卡片）
+// 设计目标：一屏尽览全部工具 + 数学艺术风格 + 双主题（dark 默认 / light）
+// 主题切换机制：单一开关 <html data-theme="light"> 或无属性（dark）
+// 所有颜色由 CSS 变量驱动；anti-flash 内联脚本在 <head> 最前面读取 localStorage 设置主题
 const LAUNCHER_HTML = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>复变函数工具集 · 启动器</title>
+<script>/* anti-flash: 在 paint 前恢复主题，支持 URL ?theme= 临时覆盖 */
+(function(){try{var sp=new URLSearchParams(location.search);var t=sp.get('theme')||localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t;try{localStorage.setItem('theme',t);}catch(e){}}}catch(e){}})();
+</script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0f0f1e;--bg2:#1a1a2e;--bg3:#16213e;--accent:#00d4ff;--accent2:#7b2ff7;--accent3:#ff5eb0;--text:#e0e0e0;--text2:#8899aa;--border:#2a2a4a;--card-bg:rgba(22,33,62,0.55)}
 html,body{height:100%}
-body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial-gradient(1100px 560px at 88% -12%,rgba(123,47,247,.13),transparent 62%),radial-gradient(1000px 540px at -8% 112%,rgba(0,212,255,.11),transparent 60%),radial-gradient(ellipse at top left,var(--bg3) 0%,var(--bg) 62%);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px clamp(14px,3vw,36px);overflow-x:hidden}
+/* === 主题变量：dark 默认 === */
+:root{
+  --bg:#0f0f1e;--bg-grad-a:rgba(123,47,247,.13);--bg-grad-b:rgba(0,212,255,.11);
+  --bg3:#16213e;--text:#e0e0e0;--text2:#8899aa;--border:#2a2a4a;
+  --card-bg:rgba(22,33,62,0.55);--chip-bg:rgba(0,0,0,0.2);
+  --title-color:#e0e0e0;--link:#00d4ff;--link-hover:#33ddff;
+  --flo:.07;/* 漂浮符号基础 opacity 系数 */
+}
+/* === 主题变量：light === */
+:root[data-theme="light"]{
+  --bg:#eef2f6;--bg-grad-a:rgba(123,47,247,.07);--bg-grad-b:rgba(0,140,200,.06);
+  --bg3:#dde4ed;--text:#1a1a2e;--text2:#5a6572;--border:#c4cbd4;
+  --card-bg:rgba(255,255,255,0.85);--chip-bg:rgba(0,0,0,0.04);
+  --title-color:#1a1a2e;--link:#0088cc;--link-hover:#006699;
+  --flo:.045;
+}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial-gradient(1100px 560px at 88% -12%,var(--bg-grad-a),transparent 62%),radial-gradient(1000px 540px at -8% 112%,var(--bg-grad-b),transparent 60%),radial-gradient(ellipse at top left,var(--bg3) 0%,var(--bg) 62%);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px clamp(14px,3vw,36px);overflow-x:hidden;transition:background .4s ease,color .4s ease}
 /* ---- 漂浮数学符号背景 ---- */
-.math-bg{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
-.math-bg span{position:absolute;font-family:Georgia,'Times New Roman',serif;font-style:italic;line-height:1;user-select:none;animation:floaty 16s ease-in-out infinite}
-.math-bg span:nth-child(1){top:8%;left:5%;font-size:54px;color:#00d4ff;opacity:.07}
-.math-bg span:nth-child(2){top:16%;right:8%;font-size:44px;color:#7b2ff7;opacity:.09;animation-delay:-3s}
-.math-bg span:nth-child(3){top:56%;left:3%;font-size:64px;color:#50fa7b;opacity:.06;animation-delay:-6s}
-.math-bg span:nth-child(4){bottom:10%;left:22%;font-size:40px;color:#ffb86c;opacity:.08;animation-delay:-9s}
-.math-bg span:nth-child(5){bottom:14%;right:5%;font-size:58px;color:#2dd4bf;opacity:.08;animation-delay:-4.5s}
-.math-bg span:nth-child(6){top:42%;right:2.5%;font-size:36px;color:#ff5eb0;opacity:.08;animation-delay:-7.5s}
-.math-bg span:nth-child(7){top:4%;left:40%;font-size:34px;color:#e0e0e0;opacity:.05;animation-delay:-11s}
-.math-bg span:nth-child(8){bottom:4%;left:47%;font-size:46px;color:#00d4ff;opacity:.06;animation-delay:-1.5s}
-.math-bg span:nth-child(9){top:30%;left:13%;font-size:30px;color:#e0e0e0;opacity:.05;animation-delay:-5s}
-.math-bg span:nth-child(10){top:68%;right:16%;font-size:32px;color:#7b2ff7;opacity:.07;animation-delay:-12.5s}
+.math-bg{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0;transition:opacity .4s ease}
+.math-bg span{position:absolute;font-family:Georgia,'Times New Roman',serif;font-style:italic;line-height:1;user-select:none;animation:floaty 16s ease-in-out infinite;transition:opacity .4s ease}
+.math-bg span:nth-child(1){top:8%;left:5%;font-size:54px;color:#00d4ff;opacity:calc(var(--flo)*1.0)}
+.math-bg span:nth-child(2){top:16%;right:8%;font-size:44px;color:#7b2ff7;opacity:calc(var(--flo)*1.3);animation-delay:-3s}
+.math-bg span:nth-child(3){top:56%;left:3%;font-size:64px;color:#50fa7b;opacity:calc(var(--flo)*0.85);animation-delay:-6s}
+.math-bg span:nth-child(4){bottom:10%;left:22%;font-size:40px;color:#ffb86c;opacity:calc(var(--flo)*1.15);animation-delay:-9s}
+.math-bg span:nth-child(5){bottom:14%;right:5%;font-size:58px;color:#2dd4bf;opacity:calc(var(--flo)*1.15);animation-delay:-4.5s}
+.math-bg span:nth-child(6){top:42%;right:2.5%;font-size:36px;color:#ff5eb0;opacity:calc(var(--flo)*1.15);animation-delay:-7.5s}
+.math-bg span:nth-child(7){top:4%;left:40%;font-size:34px;color:var(--text);opacity:calc(var(--flo)*0.7);animation-delay:-11s}
+.math-bg span:nth-child(8){bottom:4%;left:47%;font-size:46px;color:#00d4ff;opacity:calc(var(--flo)*0.85);animation-delay:-1.5s}
+.math-bg span:nth-child(9){top:30%;left:13%;font-size:30px;color:var(--text);opacity:calc(var(--flo)*0.7);animation-delay:-5s}
+.math-bg span:nth-child(10){top:68%;right:16%;font-size:32px;color:#7b2ff7;opacity:calc(var(--flo)*1.0);animation-delay:-12.5s}
 @keyframes floaty{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-18px) rotate(4deg)}}
 @media (prefers-reduced-motion:reduce){.math-bg span{animation:none}}
+/* ---- 主题切换按钮 ---- */
+.theme-toggle{position:fixed;top:16px;right:16px;z-index:100;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:var(--card-bg);color:var(--text);backdrop-filter:blur(10px);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;transition:transform .2s ease,background .2s ease,border-color .2s ease}
+.theme-toggle:hover{transform:rotate(20deg);border-color:var(--accent,var(--link))}
+.theme-toggle .sun{display:none}
+.theme-toggle .moon{display:block}
+:root[data-theme="light"] .theme-toggle .sun{display:block}
+:root[data-theme="light"] .theme-toggle .moon{display:none}
 .container{position:relative;z-index:1;max-width:1420px;width:100%;display:flex;flex-direction:column;align-items:center;gap:24px;animation:fadeIn .55s ease-out}
 @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .header{text-align:center}
-.header h1{font-size:clamp(28px,4.2vw,44px);font-weight:800;background:linear-gradient(135deg,var(--accent) 0%,var(--accent2) 50%,var(--accent3) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:-0.02em;margin-bottom:8px}
-.header .subtitle{font-size:13.5px;color:var(--text2);letter-spacing:0.02em}
+.header h1{font-size:clamp(28px,4.2vw,44px);font-weight:800;color:var(--title-color);letter-spacing:-0.02em;margin-bottom:8px;transition:color .4s ease}
+.header .subtitle{font-size:13.5px;color:var(--text2);letter-spacing:0.02em;transition:color .4s ease}
 .header .subtitle .sep{color:var(--border);margin:0 7px}
-.header .formula{margin-top:9px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14.5px;color:var(--text2);letter-spacing:.06em}
-.header .formula b{color:var(--accent);font-weight:normal}
+.header .formula{margin-top:9px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14.5px;color:var(--text2);letter-spacing:.06em;transition:color .4s ease}
+.header .formula b{color:var(--link);font-weight:normal}
 .header .formula .sep{color:var(--border);font-style:normal;margin:0 10px}
 /* ---- 工具卡片 ---- */
 .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(198px,1fr));gap:13px;width:100%}
-.card{--c:var(--accent);--cbg:rgba(0,212,255,0.10);--glow:rgba(0,212,255,0.16);position:relative;display:flex;flex-direction:column;padding:19px 17px 15px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;text-decoration:none;color:inherit;cursor:pointer;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;backdrop-filter:blur(10px);overflow:hidden;animation:cardIn .5s ease-out backwards}
+.card{--c:var(--link);--cbg:rgba(0,212,255,0.10);--glow:rgba(0,212,255,0.16);position:relative;display:flex;flex-direction:column;padding:19px 17px 15px;background:var(--card-bg);border:1px solid var(--border);border-radius:14px;text-decoration:none;color:inherit;cursor:pointer;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease,background .4s ease;backdrop-filter:blur(10px);overflow:hidden;animation:cardIn .5s ease-out backwards}
 .card:nth-child(1){animation-delay:.04s}.card:nth-child(2){animation-delay:.11s}.card:nth-child(3){animation-delay:.18s}.card:nth-child(4){animation-delay:.25s}.card:nth-child(5){animation-delay:.32s}
 @keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 .card::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at top right,var(--cbg) 0%,transparent 55%);pointer-events:none;transition:opacity .25s ease;opacity:.5}
@@ -61,12 +88,12 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
 .card:hover::before{opacity:1}
 .card:hover::after{opacity:1}
 .card .icon{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:12px;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:700;font-size:17px;color:var(--c);background:var(--cbg);border:1px solid var(--c);margin-bottom:12px}
-.card h2{font-size:15.5px;font-weight:700;margin-bottom:5px;color:var(--text);line-height:1.3}
+.card h2{font-size:15.5px;font-weight:700;margin-bottom:5px;color:var(--text);line-height:1.3;transition:color .4s ease}
 .card .tagline{font-size:12px;color:var(--c);margin-bottom:9px;font-family:'Consolas','Courier New',monospace}
-.card .desc{font-size:12.5px;color:var(--text2);line-height:1.65;margin-bottom:11px;flex:1}
+.card .desc{font-size:12.5px;color:var(--text2);line-height:1.65;margin-bottom:11px;flex:1;transition:color .4s ease}
 .card .features{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:11px}
-.card .features span{font-size:10px;padding:2.5px 8px;border:1px solid var(--border);border-radius:10px;color:var(--text2);background:rgba(0,0,0,0.2)}
-.card .open-btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--c);transition:gap .2s ease;margin-top:auto}
+.card .features span{font-size:10px;padding:2.5px 8px;border:1px solid var(--border);border-radius:10px;color:var(--text2);background:var(--chip-bg);transition:background .4s ease,border-color .4s ease,color .4s ease}
+.card .open-btn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--c);transition:gap .2s ease}
 .card:hover .open-btn{gap:11px}
 .card .open-btn .arrow{font-size:14px}
 .card.fz{--c:#00d4ff;--cbg:rgba(0,212,255,0.10);--glow:rgba(0,212,255,0.16)}
@@ -74,14 +101,18 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
 .card.vectors{--c:#50fa7b;--cbg:rgba(80,250,123,0.10);--glow:rgba(80,250,123,0.16)}
 .card.calc{--c:#ffb86c;--cbg:rgba(255,184,108,0.10);--glow:rgba(255,184,108,0.16)}
 .card.expint{--c:#2dd4bf;--cbg:rgba(45,212,191,0.10);--glow:rgba(45,212,191,0.16)}
-.footer{text-align:center;font-size:11.5px;color:var(--text2);opacity:0.65;line-height:1.7}
-.footer a{color:var(--accent);text-decoration:none}
-.footer a:hover{text-decoration:underline}
+.footer{text-align:center;font-size:11.5px;color:var(--text2);opacity:0.65;line-height:1.7;transition:color .4s ease}
+.footer a{color:var(--link);text-decoration:none}
+.footer a:hover{text-decoration:underline;color:var(--link-hover)}
 @media (max-width:700px){.cards{grid-template-columns:1fr 1fr}}
 @media (max-width:440px){.cards{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<button class="theme-toggle" id="themeToggle" aria-label="切换主题" title="切换黑夜 / 白天">
+  <span class="moon">☾</span>
+  <span class="sun">☀</span>
+</button>
 <div class="math-bg" aria-hidden="true">
   <span>∮</span><span>e<sup>iπ</sup></span><span>Σ</span><span>π</span><span>∞</span><span>∇</span><span>∂</span><span>∫</span><span>z̄</span><span>ω</span>
 </div>
@@ -147,6 +178,7 @@ body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:radial
   </div>
   <div class="footer">复变函数工具集 · 离线便携版 · 源码仓库：<a href="https://github.com/F-3-H/complex-functions">github.com/F-3-H/complex-functions</a></div>
 </div>
+<script>(function(){var b=document.getElementById('themeToggle');if(b){b.addEventListener('click',function(){var d=document.documentElement;var next=d.dataset.theme==='light'?'dark':'light';if(next==='dark')delete d.dataset.theme;else d.dataset.theme=next;try{localStorage.setItem('theme',next);}catch(e){}});}})();</script>
 </body>
 </html>`;
 
